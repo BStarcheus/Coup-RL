@@ -105,6 +105,8 @@ class Game:
                 is a single turn of 3 actions
         '''
         self.whose_turn = 1 - self.whose_turn
+        # Players will always have the first action on their turn
+        self.whose_action = self.whose_turn
         self.turn_count += 1
 
     def next_player_action(self):
@@ -176,11 +178,17 @@ class Game:
         curr_player = self.get_curr_action_player()
         curr_player.add_coins(1)
         curr_player.last_action = INCOME
-        self.next_player_action()
         self.next_player_turn()
 
-    def foreign_aid(self):
-        ...
+    def foreign_aid(self, finish_action=False):
+        if not finish_action:
+            # Before allowing the action to take effect, the opponent must not block it
+            self.get_curr_action_player().last_action = FOREIGN_AID
+            self.next_player_action()
+        else:
+            # Opponent did not block, so complete the action
+            self.get_curr_action_player().add_coins(2)
+            self.next_player_turn()
 
     def coup(self):
         curr_player = self.get_curr_action_player()
@@ -192,11 +200,22 @@ class Game:
         curr_player.last_action = COUP
         self.next_player_action()
 
-    def tax(self):
-        ...
+    def tax(self, finish_action=False):
+        if not finish_action:
+            # Before allowing the action to take effect, the opponent must not challenge it
+            self.get_curr_action_player().last_action = TAX
+            self.next_player_action()
+        else:
+            # Opponent did not challenge, so complete the action
+            self.get_curr_action_player().add_coins(3)
+            self.next_player_turn()
 
     def assassinate(self):
-        ...
+        curr_player = self.get_curr_action_player()
+        curr_player.last_action = ASSASSINATE
+        # Pay the coins whether or not the action is blocked/challenged
+        curr_player.remove_coins(3)
+        self.next_player_action()
 
     def exchange(self):
         ...
@@ -237,9 +256,6 @@ class Game:
         curr_player.is_card_face_up[card] = True
         curr_player.last_action = LOSE_CARD_1 + card
         self.next_player_turn()
-        # Lose card will always be the last action of a turn
-        # so the next action is the start of the next player's turn
-        self.whose_action = self.whose_turn
 
     def lose_card_1(self):
         self._lose_card(0)
