@@ -61,7 +61,7 @@ class Game:
         self.players = [Player(i, True) for i in range(num_human_players)]
         self.players += [Player(i+num_human_players, False) for i in range(2-num_human_players)]
 
-        self.deck = 3 * CARD_NAMES
+        self.deck = 3 * [i for i in range(len(CARD_NAMES))]
         self.shuffle_deck()
         self.deal_cards()
 
@@ -71,6 +71,20 @@ class Game:
         # Turns can include several sub-actions.
         # Who is currently choosing an action?
         self.whose_action = 0
+
+        self.turn_count = 0
+
+    def print_player(self, p_ind):
+        p = self.players[p_ind]
+        print(f'P{p_ind + 1}:', CARD_NAMES[p.cards[0]], '|', p.is_card_face_up[0], '|',
+                                CARD_NAMES[p.cards[1]], '|', p.is_card_face_up[1], '|',
+              p.coins, '|', '_' if p.last_action == None else CoupEnv.actions[p.last_action])
+
+    def render(self):
+        print('Turn', self.turn_count)
+        print('Player: Card1 | FaceUp | Card2 | FaceUp | Coins | LastAction')
+        self.print_player(0)
+        self.print_player(1)
 
     def draw_card(self, index=0):
         return self.deck.pop(index)
@@ -91,6 +105,7 @@ class Game:
                 is a single turn of 3 actions
         '''
         self.whose_turn = 1 - self.whose_turn
+        self.turn_count += 1
 
     def next_player_action(self):
         '''
@@ -101,9 +116,12 @@ class Game:
     def get_curr_action_player(self):
         return self.players[self.whose_action]
 
+    def get_opp_player(self):
+        return self.players[1 - self.whose_action]
+
     def get_valid_actions(self):
         curr_player = self.get_curr_action_player()
-        opp_player = self.players[1 - self.whose_action]
+        opp_player = self.get_opp_player()
 
         if self.whose_turn != self.whose_action:
             # It is opp_player's turn, and curr_player can
@@ -155,7 +173,9 @@ class Game:
 
 
     def income(self):
-        self.get_curr_action_player().add_coins(1)
+        curr_player = self.get_curr_action_player()
+        curr_player.add_coins(1)
+        curr_player.last_action = INCOME
         self.next_player_action()
         self.next_player_turn()
 
@@ -163,7 +183,14 @@ class Game:
         ...
 
     def coup(self):
-        ...
+        curr_player = self.get_curr_action_player()
+        if curr_player.coins < 7:
+            print('Error: not possible to coup with < 7 coins')
+            return
+
+        curr_player.remove_coins(7)
+        curr_player.last_action = COUP
+        self.next_player_action()
 
     def tax(self):
         ...
@@ -201,11 +228,24 @@ class Game:
     def challenge(self):
         ...
 
+    def _lose_card(self, card):
+        curr_player = self.get_curr_action_player()
+        if curr_player.is_card_face_up[card]:
+            print('Error: cannot lose a card that is already face up')
+            return
+
+        curr_player.is_card_face_up[card] = True
+        curr_player.last_action = LOSE_CARD_1 + card
+        self.next_player_turn()
+        # Lose card will always be the last action of a turn
+        # so the next action is the start of the next player's turn
+        self.whose_action = self.whose_turn
+
     def lose_card_1(self):
-        ...
+        self._lose_card(0)
 
     def lose_card_2(self):
-        ...
+        self._lose_card(1)
 
     def pass_(self):
         ...
@@ -263,13 +303,13 @@ class CoupEnv(gym.Env):
         self.observation_space = gym.spaces.Box(low, high, dtype='uint8')
 
     def step(self, action):
-        ...
+        getattr(self.game, self.actions[action])()
     
     def reset(self):
         self.game = Game(self.num_human_players)
 
     def render(self, mode='human'):
-        ...
+        self.game.render()
     
     def close(self):
         ...
