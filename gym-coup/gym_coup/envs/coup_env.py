@@ -186,6 +186,7 @@ class Game:
 
         elif curr_player.last_action == EXCHANGE:
             # It is curr_player's turn, and opp_player has approved the exchange
+
             if len(curr_player.cards) < 4:
                 print('Error: player mid-exchange should have 4 cards including any eliminated')
                 return
@@ -253,28 +254,70 @@ class Game:
         self.next_player_action()
 
     def exchange(self):
-        ...
+        if self.is_turn_begin:
+            # Before drawing the 2 cards from the deck, the opponent must not challenge it
+            self.get_curr_action_player().last_action = EXCHANGE
+            self.next_player_action()
+        else:
+            # Opponent did not challenge, so draw 2 cards
+            curr_player = self.get_curr_action_player()
+            curr_player.add_card(self.draw_card())
+            curr_player.add_card(self.draw_card())
+            # Don't increment turn or action
+            # It is still curr_player's choice of which cards to return to the deck
+
+    def _exchange_return(self, lst):
+        curr_player = self.get_curr_action_player()
+        for ind in lst:
+            self.deck.append(curr_player.cards.pop(ind))
+        self.shuffle_deck()
+        self.next_player_turn()
 
     def exchange_return_12(self):
-        ...
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_12
+        self._exchange_return([0, 1])
 
     def exchange_return_13(self):
-        ...
+        curr_player = self.get_curr_action_player()
+        curr_player.last_action = EXCHANGE_RETURN_13
+        self._exchange_return([0, 2])
+        # Card 2 has now moved to pos 1
+        curr_player.is_card_face_up[0], curr_player.is_card_face_up[1] = curr_player.is_card_face_up[1], curr_player.is_card_face_up[0]
 
     def exchange_return_14(self):
-        ...
+        curr_player = self.get_curr_action_player()
+        curr_player.last_action = EXCHANGE_RETURN_14
+        self._exchange_return([0, 3])
+        # Card 2 has now moved to pos 1
+        curr_player.is_card_face_up[0], curr_player.is_card_face_up[1] = curr_player.is_card_face_up[1], curr_player.is_card_face_up[0]
 
     def exchange_return_23(self):
-        ...
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_23
+        self._exchange_return([1, 2])
 
     def exchange_return_24(self):
-        ...
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_24
+        self._exchange_return([1, 3])
 
     def exchange_return_34(self):
-        ...
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_34
+        self._exchange_return([2, 3])
 
     def steal(self):
-        ...
+        if self.is_turn_begin:
+            # Before allowing the action to take effect, the opponent must not block or challenge
+            self.get_curr_action_player().last_action = STEAL
+            self.next_player_action()
+        else:
+            # Opponent did not challenge, so complete the action
+            curr_player = self.get_curr_action_player()
+            opp_player = self.get_opp_player()
+
+            num_steal = 2 if opp_player.coins >= 2 else 1
+
+            opp_player.remove_coins(num_steal)
+            curr_player.add_coins(num_steal)
+            self.next_player_turn()
 
     def block(self):
         ...
@@ -289,14 +332,15 @@ class Game:
             return
 
         curr_player.is_card_face_up[card] = True
-        curr_player.last_action = LOSE_CARD_1 + card
         curr_player.lost_challenge = False
         self.next_player_turn()
 
     def lose_card_1(self):
+        self.get_curr_action_player().last_action = LOSE_CARD_1
         self._lose_card(0)
 
     def lose_card_2(self):
+        self.get_curr_action_player().last_action = LOSE_CARD_2
         self._lose_card(1)
 
     def pass_(self):
