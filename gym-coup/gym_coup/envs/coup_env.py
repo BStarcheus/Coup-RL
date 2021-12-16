@@ -43,6 +43,10 @@ class Player:
         self.coins = 2
         self.last_action = None
 
+        # Indicate that the player has lost a challenge
+        # and must choose which card to lose
+        self.lost_challenge = False
+
     def add_card(self, card):
         self.cards.append(card)
 
@@ -73,6 +77,9 @@ class Game:
         self.whose_action = 0
 
         self.turn_count = 0
+
+        # Is it the beginning of a new turn?
+        self.is_turn_begin = True
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
@@ -108,12 +115,14 @@ class Game:
         # Players will always have the first action on their turn
         self.whose_action = self.whose_turn
         self.turn_count += 1
+        self.is_turn_begin = True
 
     def next_player_action(self):
         '''
         Increment whose action it is
         '''
         self.whose_action = 1 - self.whose_action
+        self.is_turn_begin = False
 
     def get_curr_action_player(self):
         return self.players[self.whose_action]
@@ -125,7 +134,36 @@ class Game:
         curr_player = self.get_curr_action_player()
         opp_player = self.get_opp_player()
 
-        if self.whose_turn != self.whose_action:
+        def valid_lose_card_options():
+            valid = []
+            if not curr_player.is_card_face_up[0]:
+                # Card is still in play. Can choose to give it up.
+                valid += [LOSE_CARD_1]
+            if not curr_player.is_card_face_up[1]:
+                # Card is still in play. Can choose to give it up.
+                valid += [LOSE_CARD_2]
+            return valid
+
+        if self.is_turn_begin:
+            # It's the beginning of curr_player's turn
+
+            if curr_player.coins >= 10:
+                return [COUP]
+
+            valid = [INCOME, FOREIGN_AID, TAX, EXCHANGE]
+            if curr_player.coins >= 3:
+                valid.append(ASSASSINATE)
+            if curr_player.coins >= 7:
+                valid.append(COUP)
+            if opp_player.coins > 0:
+                valid.append(STEAL)
+            
+            return valid
+
+        elif curr_player.lost_challenge:
+            return valid_lose_card_options()
+
+        elif self.whose_turn != self.whose_action:
             # It is opp_player's turn, and curr_player can
             # choose to block or challenge for certain actions
 
@@ -135,43 +173,40 @@ class Game:
                 return [PASS_, CHALLENGE]
             elif opp_player.last_action == STEAL:
                 return [PASS_, BLOCK, CHALLENGE]
-            elif opp_player.last_action in [ASSASSINATE, COUP, CHALLENGE]:
-                # CHALLENGE will only reach here if the opp_player challenges a block,
-                # and the challenge succeeds (curr_player must lose a card)
-
-                ret = []
-                for i in range(2):
-                    if not curr_player.is_card_face_up[i]:
-                        # Card is still in play. Can choose to give it up.
-                        ret += [LOSE_CARD_1 + i]
+            elif opp_player.last_action in [ASSASSINATE, COUP]:
+                valid = valid_lose_card_options()
 
                 if opp_player.last_action == ASSASSINATE:
-                    ret += [BLOCK, CHALLENGE]
+                    valid += [BLOCK, CHALLENGE]
 
-                return ret
+                return valid
             else:
-                print("Error: invalid action progression")
+                print('Error: invalid action progression')
                 return
+
+        elif curr_player.last_action == EXCHANGE:
+            # It is curr_player's turn, and opp_player has approved the exchange
+            if len(curr_player.cards) < 4:
+                print('Error: player mid-exchange should have 4 cards including any eliminated')
+                return
+            
+            valid = [EXCHANGE_RETURN_34]
+            if not curr_player.is_card_face_up[0]:
+                valid += [EXCHANGE_RETURN_13, EXCHANGE_RETURN_14]
+            if not curr_player.is_card_face_up[1]:
+                valid += [EXCHANGE_RETURN_23, EXCHANGE_RETURN_24]
+            if (not curr_player.is_card_face_up[0] and
+                not curr_player.is_card_face_up[1]):
+                valid += [EXCHANGE_RETURN_12]
+
+            return valid
 
         elif opp_player.last_action == BLOCK:
             # It is curr_player's turn and opp_player wants to block their move
             return [PASS_, CHALLENGE]
-
+        
         else:
-            # It's the beginning of curr_player's turn
-
-            if curr_player.coins >= 10:
-                return [COUP]
-
-            ret = [INCOME, FOREIGN_AID, TAX, EXCHANGE]
-            if curr_player.coins >= 3:
-                ret.append(ASSASSINATE)
-            if curr_player.coins >= 7:
-                ret.append(COUP)
-            if opp_player.coins > 0:
-                ret.append(STEAL)
-
-            return ret
+            print('Error: invalid action progression')
 
 
     def income(self):
@@ -180,8 +215,8 @@ class Game:
         curr_player.last_action = INCOME
         self.next_player_turn()
 
-    def foreign_aid(self, finish_action=False):
-        if not finish_action:
+    def foreign_aid(self):
+        if self.is_turn_begin:
             # Before allowing the action to take effect, the opponent must not block it
             self.get_curr_action_player().last_action = FOREIGN_AID
             self.next_player_action()
@@ -200,8 +235,8 @@ class Game:
         curr_player.last_action = COUP
         self.next_player_action()
 
-    def tax(self, finish_action=False):
-        if not finish_action:
+    def tax(self):
+        if self.is_turn_begin:
             # Before allowing the action to take effect, the opponent must not challenge it
             self.get_curr_action_player().last_action = TAX
             self.next_player_action()
@@ -255,6 +290,7 @@ class Game:
 
         curr_player.is_card_face_up[card] = True
         curr_player.last_action = LOSE_CARD_1 + card
+        curr_player.lost_challenge = False
         self.next_player_turn()
 
     def lose_card_1(self):
