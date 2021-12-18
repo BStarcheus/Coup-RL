@@ -28,11 +28,12 @@ EXCHANGE_RETURN_23 = 9
 EXCHANGE_RETURN_24 = 10
 EXCHANGE_RETURN_34 = 11
 STEAL              = 12
-BLOCK              = 13
-CHALLENGE          = 14
-LOSE_CARD_1        = 15
-LOSE_CARD_2        = 16
-PASS_              = 17
+PASS_              = 13
+BLOCK              = 14
+CHALLENGE          = 15
+LOSE_CARD_1        = 16
+LOSE_CARD_2        = 17
+
 
 class Player:
     def __init__(self, id, is_human=False):
@@ -144,6 +145,7 @@ class Game:
                 valid += [LOSE_CARD_2]
             return valid
 
+
         if self.is_turn_begin:
             # It's the beginning of curr_player's turn
 
@@ -222,7 +224,7 @@ class Game:
             self.get_curr_action_player().last_action = FOREIGN_AID
             self.next_player_action()
         else:
-            # Opponent did not block, so complete the action
+            # PASS: Opponent did not block, so complete the action
             self.get_curr_action_player().add_coins(2)
             self.next_player_turn()
 
@@ -242,7 +244,7 @@ class Game:
             self.get_curr_action_player().last_action = TAX
             self.next_player_action()
         else:
-            # Opponent did not challenge, so complete the action
+            # PASS: Opponent did not challenge, so complete the action
             self.get_curr_action_player().add_coins(3)
             self.next_player_turn()
 
@@ -259,7 +261,7 @@ class Game:
             self.get_curr_action_player().last_action = EXCHANGE
             self.next_player_action()
         else:
-            # Opponent did not challenge, so draw 2 cards
+            # PASS: Opponent did not challenge, so draw 2 cards
             curr_player = self.get_curr_action_player()
             curr_player.add_card(self.draw_card())
             curr_player.add_card(self.draw_card())
@@ -309,7 +311,7 @@ class Game:
             self.get_curr_action_player().last_action = STEAL
             self.next_player_action()
         else:
-            # Opponent did not challenge, so complete the action
+            # PASS: Opponent did not challenge, so complete the action
             curr_player = self.get_curr_action_player()
             opp_player = self.get_opp_player()
 
@@ -319,11 +321,37 @@ class Game:
             curr_player.add_coins(num_steal)
             self.next_player_turn()
 
+    def pass_(self):
+        act = self.get_opp_player().last_action
+
+        if act in [FOREIGN_AID, TAX, EXCHANGE, STEAL, BLOCK]:
+            self.get_curr_action_player().last_action = PASS_
+            self.next_player_action()
+            getattr(self, self.actions[act])()
+
+        else:
+            print('Error: cannot pass after', CoupEnv.actions[act])
+            return
+
     def block(self):
         ...
 
     def challenge(self):
-        ...
+
+        # Check if opp_player has the required card
+
+        # If they do, curr_player loses a card
+
+        # If they don't, opp_player loses a card
+
+        act = self.get_opp_player().last_action
+
+        if act in [TAX, ASSASSINATE, EXCHANGE, STEAL, BLOCK]:
+            ...
+
+        else:
+            print('Error: cannot challenge', CoupEnv.actions[act])
+            return
 
     def _lose_card(self, card):
         curr_player = self.get_curr_action_player()
@@ -342,9 +370,6 @@ class Game:
     def lose_card_2(self):
         self.get_curr_action_player().last_action = LOSE_CARD_2
         self._lose_card(1)
-
-    def pass_(self):
-        ...
 
 
 
@@ -368,12 +393,12 @@ class CoupEnv(gym.Env):
         10: 'exchange_return_24', # return cards 2,4
         11: 'exchange_return_34', # return cards 3,4
         12: 'steal',
-        13: 'block',       # block the opponent's move
-        14: 'challenge',   # challenge the opponent's move
-        15: 'lose_card_1', # choose which card to lose
-        16: 'lose_card_2',
-        17: 'pass_'         # only an option when asked whether you'd
+        13: 'pass_',       # only an option when asked whether you'd
                            # like to block or challenge your opponent's last move
+        14: 'block',       # block the opponent's move
+        15: 'challenge',   # challenge the opponent's move
+        16: 'lose_card_1', # choose which card to lose
+        17: 'lose_card_2'
     }
 
     def __init__(self, num_human_players=0):
