@@ -57,6 +57,12 @@ class Player:
     def remove_coins(self, num):
         self.coins -= num
 
+    def has_face_down_card(self, card):
+        for i in range(2):
+            if self.cards[i] == card and not self.is_card_face_up[i]:
+                return True
+        return False
+
 class Game:
     '''
     2 player Coup game
@@ -81,6 +87,8 @@ class Game:
 
         # Is it the beginning of a new turn?
         self.is_turn_begin = True
+
+        self.game_over = False
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
@@ -262,6 +270,7 @@ class Game:
             self.next_player_action()
         else:
             # PASS: Opponent did not challenge, so draw 2 cards
+            # CHALLENGE: curr_player had the ambassador, so complete the action
             curr_player = self.get_curr_action_player()
             curr_player.add_card(self.draw_card())
             curr_player.add_card(self.draw_card())
@@ -273,7 +282,12 @@ class Game:
         for ind in lst:
             self.deck.append(curr_player.cards.pop(ind))
         self.shuffle_deck()
-        self.next_player_turn()
+
+        if self.get_opp_player().lost_challenge:
+            # opp still needs to choose a card to lose
+            self.next_player_action()
+        else:
+            self.next_player_turn()
 
     def exchange_return_12(self):
         self.get_curr_action_player().last_action = EXCHANGE_RETURN_12
@@ -316,7 +330,6 @@ class Game:
             opp_player = self.get_opp_player()
 
             num_steal = 2 if opp_player.coins >= 2 else 1
-
             opp_player.remove_coins(num_steal)
             curr_player.add_coins(num_steal)
             self.next_player_turn()
@@ -337,21 +350,95 @@ class Game:
         ...
 
     def challenge(self):
-
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
         # Check if opp_player has the required card
-
         # If they do, curr_player loses a card
-
         # If they don't, opp_player loses a card
 
         act = self.get_opp_player().last_action
 
-        if act in [TAX, ASSASSINATE, EXCHANGE, STEAL, BLOCK]:
+        if act == TAX:
+            if opp_player.has_face_down_card(DUKE):
+                curr_player.lost_challenge = True
+                # Replace the revealed card
+                self._challenge_fail_replace_card(DUKE)
+                
+                # Complete the action
+                opp_player.add_coins(3)
+                
+                # curr_player must lose a card
+                # It is still their action
+            else:
+                opp_player.lost_challenge = True
+                # opp_player must lose a card
+                self.next_player_action()
+
+        elif act == ASSASSINATE:
+            if opp_player.has_face_down_card(ASSASSIN):
+                # curr_player loses the game
+                # Lose 1 card for assassination
+                # and 1 card for losing challenge
+                curr_player.is_card_face_up = [True, True]
+                self.game_over = True
+            else:
+                opp_player.lost_challenge = True
+                # Coins spent are returned in this one case
+                opp_player.add_coins(3)
+                # opp_player must lose a card
+                self.next_player_action()
+
+        elif act == EXCHANGE:
+            if opp_player.has_face_down_card(AMBASSADOR):
+                curr_player.lost_challenge = True
+                # Replace the revealed card
+                self._challenge_fail_replace_card(AMBASSADOR)
+
+                # Complete the action
+                self.next_player_action()
+                self.exchange()
+
+                # curr_player must lose a card
+                # After _exchange_return is called it will switch to their action
+            else:
+                opp_player.lost_challenge = True
+                # opp_player must lose a card
+                self.next_player_action()
+
+        elif act == STEAL:
+            if opp_player.has_face_down_card(CAPTAIN):
+                curr_player.lost_challenge = True
+                # Replace the revealed card
+                self._challenge_fail_replace_card(CAPTAIN)
+
+                # Complete the action
+                num_steal = 2 if curr_player.coins >= 2 else 1
+                curr_player.remove_coins(num_steal)
+                opp_player.add_coins(num_steal)
+                # curr_player must lose a card
+                # It is still their action
+            else:
+                opp_player.lost_challenge = True
+                # opp_player must lose a card
+                self.next_player_action()
+
+        elif act == BLOCK:
             ...
 
         else:
             print('Error: cannot challenge', CoupEnv.actions[act])
             return
+
+    def _challenge_fail_replace_card(self, card):
+        # If the challenged player actually had the correct card,
+        # shuffle it into the deck and give them a new card
+        p = self.get_opp_player()
+        for i in range(2):
+            if p.cards[i] == card and not p.is_card_face_up[i]:
+                self.deck.append(card)
+                self.shuffle_deck()
+                p.cards[i] = self.draw_card()
+                return
 
     def _lose_card(self, card):
         curr_player = self.get_curr_action_player()
@@ -361,6 +448,10 @@ class Game:
 
         curr_player.is_card_face_up[card] = True
         curr_player.lost_challenge = False
+
+        # Check if the player has no cards remaining
+        self.game_over = not (False in curr_player.is_card_face_up)
+
         self.next_player_turn()
 
     def lose_card_1(self):
