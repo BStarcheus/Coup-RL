@@ -5,7 +5,7 @@ from random import shuffle
 # Cards
 CARD_NAMES = ['Assassin',
               'Ambassador',
-              'Captian',
+              'Captain',
               'Contessa',
               'Duke']
 ASSASSIN   = 0
@@ -337,17 +337,30 @@ class Game:
     def pass_(self):
         act = self.get_opp_player().last_action
 
-        if act in [FOREIGN_AID, TAX, EXCHANGE, STEAL, BLOCK]:
+        if act in [FOREIGN_AID, TAX, EXCHANGE, STEAL]:
             self.get_curr_action_player().last_action = PASS_
             self.next_player_action()
-            getattr(self, self.actions[act])()
+            # Complete the action
+            getattr(self, CoupEnv.actions[act])()
+
+        elif act == BLOCK:
+            # Block succeeds, so nothing to do. Next turn.
+            self.get_curr_action_player().last_action = PASS_
+            self.next_player_turn()
 
         else:
             print('Error: cannot pass after', CoupEnv.actions[act])
             return
 
     def block(self):
-        ...
+        act = self.get_opp_player().last_action
+
+        if act in [FOREIGN_AID, ASSASSINATE, STEAL]:
+            self.get_curr_action_player().last_action = BLOCK
+            self.next_player_action()
+        else:
+            print('Error: cannot pass after', CoupEnv.actions[act])
+            return
 
     def challenge(self):
         curr_player = self.get_curr_action_player()
@@ -359,6 +372,8 @@ class Game:
         act = self.get_opp_player().last_action
 
         if act == TAX:
+            curr_player.last_action = CHALLENGE
+
             if opp_player.has_face_down_card(DUKE):
                 curr_player.lost_challenge = True
                 # Replace the revealed card
@@ -375,6 +390,8 @@ class Game:
                 self.next_player_action()
 
         elif act == ASSASSINATE:
+            curr_player.last_action = CHALLENGE
+
             if opp_player.has_face_down_card(ASSASSIN):
                 # curr_player loses the game
                 # Lose 1 card for assassination
@@ -383,12 +400,16 @@ class Game:
                 self.game_over = True
             else:
                 opp_player.lost_challenge = True
+                
                 # Coins spent are returned in this one case
                 opp_player.add_coins(3)
+                
                 # opp_player must lose a card
                 self.next_player_action()
 
         elif act == EXCHANGE:
+            curr_player.last_action = CHALLENGE
+
             if opp_player.has_face_down_card(AMBASSADOR):
                 curr_player.lost_challenge = True
                 # Replace the revealed card
@@ -406,6 +427,8 @@ class Game:
                 self.next_player_action()
 
         elif act == STEAL:
+            curr_player.last_action = CHALLENGE
+
             if opp_player.has_face_down_card(CAPTAIN):
                 curr_player.lost_challenge = True
                 # Replace the revealed card
@@ -423,7 +446,66 @@ class Game:
                 self.next_player_action()
 
         elif act == BLOCK:
-            ...
+            prev_act = curr_player.last_action
+            curr_player.last_action = CHALLENGE
+
+            if prev_act == FOREIGN_AID:
+                if opp_player.has_face_down_card(DUKE):
+                    curr_player.lost_challenge = True
+                    # Replace the revealed card
+                    self._challenge_fail_replace_card(DUKE)
+                    # curr_player must lose a card
+                    # It is still their action
+                else:
+                    opp_player.lost_challenge = True
+                    
+                    # Block failed, so complete the action
+                    curr_player.add_coins(2)
+                    
+                    # opp_player must lose a card
+                    self.next_player_action()
+
+            elif prev_act == ASSASSINATE:
+                if opp_player.has_face_down_card(CONTESSA):
+                    curr_player.lost_challenge = True
+                    # Replace the revealed card
+                    self._challenge_fail_replace_card(CONTESSA)
+                    # curr_player must lose a card
+                    # It is still their action
+                else:
+                    # opp_player loses the game
+                    # Lose 1 card for assassination
+                    # and 1 card for losing challenge
+                    opp_player.is_card_face_up = [True, True]
+                    self.game_over = True
+
+            elif prev_act == STEAL:
+                if opp_player.has_face_down_card(CAPTAIN):
+                    curr_player.lost_challenge = True
+                    # Replace the revealed card
+                    self._challenge_fail_replace_card(CAPTAIN)
+                    # curr_player must lose a card
+                    # It is still their action
+                elif opp_player.has_face_down_card(AMBASSADOR):
+                    curr_player.lost_challenge = True
+                    # Replace the revealed card
+                    self._challenge_fail_replace_card(AMBASSADOR)
+                    # curr_player must lose a card
+                    # It is still their action
+                else:
+                    opp_player.lost_challenge = True
+
+                    # Block failed, so complete the action
+                    num_steal = 2 if opp_player.coins >= 2 else 1
+                    opp_player.remove_coins(num_steal)
+                    curr_player.add_coins(num_steal)
+
+                    # opp_player must lose a card
+                    self.next_player_action()
+
+            else:
+                print('Error: cannot block', CoupEnv.actions[prev_act])
+                return
 
         else:
             print('Error: cannot challenge', CoupEnv.actions[act])
@@ -525,3 +607,8 @@ class CoupEnv(gym.Env):
     
     def close(self):
         ...
+
+    def get_valid_actions(self):
+        a = self.game.get_valid_actions()
+        print([self.actions[x] for x in a])
+        return a
