@@ -604,9 +604,6 @@ class CoupEnv(gym.Env):
 
     def render(self, mode='human'):
         self.game.render()
-    
-    def close(self):
-        ...
 
     def get_valid_actions(self):
         a = self.game.get_valid_actions()
