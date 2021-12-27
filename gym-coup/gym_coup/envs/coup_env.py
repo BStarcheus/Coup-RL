@@ -279,7 +279,7 @@ class Game:
 
     def _exchange_return(self, lst):
         curr_player = self.get_curr_action_player()
-        for ind in lst:
+        for ind in sorted(lst, reverse=True):
             self.deck.append(curr_player.cards.pop(ind))
         self.shuffle_deck()
 
