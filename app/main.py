@@ -12,7 +12,8 @@ class Coup(QMainWindow):
         self.setFocus()
 
     def start_game(self):
-        ...
+        self.board_widget = Board()
+        self.setCentralWidget(self.board_widget)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -12,24 +12,20 @@ class Menu(QWidget):
         # Select RL agent opponent
         sub = QHBoxLayout()
         self.select_btn = QPushButton('Select Opponent Agent', self)
-        sub.addWidget(self.select_btn)
-        sub.setAlignment(self.select_btn, Qt.AlignmentFlag.AlignCenter)
+        sub.addWidget(self.select_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.file_name = QLineEdit('', self)
         self.file_name.setReadOnly(True)
         self.file_name.setMinimumWidth(200)
-        sub.addWidget(self.file_name)
-        sub.setAlignment(self.file_name, Qt.AlignmentFlag.AlignCenter)
+        sub.addWidget(self.file_name, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addRow(sub)
 
         # Radio buttons (training, no training)
         sub = QHBoxLayout()
         self.rd1 = QRadioButton('Training')
         self.rd2 = QRadioButton('No Training')
-        sub.addWidget(self.rd1)
-        sub.addWidget(self.rd2)
-        sub.setAlignment(self.rd1, Qt.AlignmentFlag.AlignCenter)
-        sub.setAlignment(self.rd2, Qt.AlignmentFlag.AlignCenter)
+        sub.addWidget(self.rd1, alignment=Qt.AlignmentFlag.AlignCenter)
+        sub.addWidget(self.rd2, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addRow(sub)
         
         self.btn_group = QButtonGroup()
