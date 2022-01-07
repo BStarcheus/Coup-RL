@@ -14,6 +14,10 @@ class Card(QWidget):
     }
 
     def __init__(self, name=None):
+        '''
+        By default, no name given shows a face down card.
+        If a name is given, show the (face up) card's name and color.
+        '''
         super().__init__()
         self.setFixedSize(100, 150)
 
@@ -29,15 +33,42 @@ class Card(QWidget):
         self.setLayout(self.layout)
 
         self.setAutoFillBackground(True)
-        p = self.palette()
-        if self.hidden:
-            p.setColor(self.backgroundRole(), QColor('lightGray'))
-        else:
-            p.setColor(self.backgroundRole(), QColor(self.name_colors[name]))
-        self.setPalette(p)
-    
 
-# Indicator when card is eliminated
+        if self.hidden:
+            self.set_hidden()
+        else:
+            self.set_card(name)
+        self.set_eliminated()
+
+    def set_card(self, name=None):
+        # Set the card text and color
+        if name not in self.name_colors:
+            print(f'Error: Cannot set to unknown card type {name}')
+            return
+
+        self.lbl.setText(name)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QColor(self.name_colors[name]))
+        self.setPalette(p)
+        self.hidden = False
+
+    def set_hidden(self):
+        # Render a card hidden by the opponent
+        self.lbl.setText('')
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QColor('lightGray'))
+        self.setPalette(p)
+        self.hidden = True
+
+    def set_eliminated(self):
+        # Indicate when card is eliminated
+        if self.hidden:
+            print('Show the card details before setting it as eliminated.')
+            return
+        
+        self.elim_lbl = QLabel('ELIMINATED', self)
+        self.elim_lbl.setStyleSheet('color: red; font-weight: bold;')
+        self.elim_lbl.move(12, 0)
 
 
 # Section of the board for all parts relating to a single player
