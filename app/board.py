@@ -5,9 +5,11 @@ class Board(QWidget):
         super().__init__()
         self.layout = QVBoxLayout()
 
+        self.top_menu = TopMenu()
         self.p1 = Player()
         self.p2 = Player()
 
+        self.layout.addWidget(self.top_menu)
         self.layout.addWidget(self.p2)
         self.layout.addWidget(self.p1)
 

@@ -2,8 +2,6 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 
-
-# Cards
 class Card(QWidget):
     name_colors = {
         'Assassin': 'black',
@@ -12,7 +10,6 @@ class Card(QWidget):
         'Contessa': 'red',
         'Duke': 'purple',
     }
-
     def __init__(self, name=None):
         '''
         By default, no name given shows a face down card.
@@ -38,7 +35,6 @@ class Card(QWidget):
             self.set_hidden()
         else:
             self.set_card(name)
-        self.set_eliminated()
 
     def set_card(self, name=None):
         # Set the card text and color
@@ -116,13 +112,29 @@ class Player(QWidget):
 
     def set_move(self, action):
         self.move.setText(action)
- 
 
-# Court Deck
 
-# Treasury
+class ActionSelector(QWidget):
+    def __init__(self):
+        super().__init__()
 
-# Action selector
-# Gray out invalid options on turn
+        # TODO
+        # 2 layouts
+        #   Main actions at beginning of turn
+        #   Counteractions
+        # Switch between throughout game
+        # Gray out invalid actions
 
-# Top menu bar
+
+class TopMenu(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.setFixedSize(150, 40)
+
+        self.quit_btn = QPushButton('Quit', self)
+        self.rules_btn = QPushButton('Rules', self)
+
+        self.layout.addWidget(self.quit_btn)
+        self.layout.addWidget(self.rules_btn)
+        self.setLayout(self.layout)
