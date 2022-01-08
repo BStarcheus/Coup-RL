@@ -6,11 +6,13 @@ class Board(QWidget):
         self.layout = QVBoxLayout()
 
         self.top_menu = TopMenu()
-        self.p1 = Player()
-        self.p2 = Player()
+        self.p1 = Player('Me')
+        self.p2 = Player('Opponent')
+        self.actions = ActionSelector()
 
         self.layout.addWidget(self.top_menu)
         self.layout.addWidget(self.p2)
+        self.layout.addWidget(self.actions)
         self.layout.addWidget(self.p1)
 
         self.setLayout(self.layout)

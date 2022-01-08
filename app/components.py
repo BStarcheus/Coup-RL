@@ -52,7 +52,7 @@ class Card(QWidget):
         # Render a card hidden by the opponent
         self.lbl.setText('')
         p = self.palette()
-        p.setColor(self.backgroundRole(), QColor('lightGray'))
+        p.setColor(self.backgroundRole(), QColor('darkGray'))
         self.setPalette(p)
         self.hidden = True
 
@@ -69,27 +69,32 @@ class Card(QWidget):
 
 # Section of the board for all parts relating to a single player
 class Player(QWidget):
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
-        self.layout = QHBoxLayout()
+        self.layout = QVBoxLayout()
+        self.msg = QLabel(name)
+        self.layout.addWidget(self.msg)
+
+        self._layout = QHBoxLayout()
 
         self.move_lbl = QLabel('Last move:', self)
         self.move = QLabel('-', self)
         sub = QVBoxLayout()
         sub.addWidget(self.move_lbl)
         sub.addWidget(self.move)
-        self.layout.addLayout(sub)
+        self._layout.addLayout(sub)
 
         self.cards = QHBoxLayout()
-        self.layout.addLayout(self.cards)
+        self._layout.addLayout(self.cards)
 
         sub = QHBoxLayout()
         self.coin_lbl = QLabel('Coins:', self)
         self.coins = QLabel('-', self)
         sub.addWidget(self.coin_lbl, alignment=Qt.AlignmentFlag.AlignRight)
         sub.addWidget(self.coins, alignment=Qt.AlignmentFlag.AlignRight)
-        self.layout.addLayout(sub)
+        self._layout.addLayout(sub)
 
+        self.layout.addLayout(self._layout)
         self.setLayout(self.layout)
 
     def add_card(self, name):
@@ -103,7 +108,7 @@ class Player(QWidget):
         if ind < 0 or ind > 1:
             print(f'Card index {ind} invalid')
             return
-        
+
         card = Card(name)
         self.cards.replaceWidget(self.cards.itemAt(ind), card)
 
@@ -117,13 +122,52 @@ class Player(QWidget):
 class ActionSelector(QWidget):
     def __init__(self):
         super().__init__()
+        self.layout = QVBoxLayout()
+        self.msg = QLabel('Select an action below')
+        self.layout.addWidget(self.msg)
 
-        # TODO
-        # 2 layouts
-        #   Main actions at beginning of turn
-        #   Counteractions
-        # Switch between throughout game
-        # Gray out invalid actions
+        self.main_actions = QGridLayout()
+        self.counter_actions = QGridLayout()
+
+        # Main actions
+        actions = ['Income', 'Foreign Aid', 'Coup', 'Tax', 'Assassinate', 'Exchange', 'Steal']
+        colors = [None, None, None, 'purple', 'black', 'green', 'blue']
+        for x in range(len(actions)):
+            per_row = 4
+            r = x // per_row
+            c = x % per_row
+            self.main_actions.addWidget(ActionButton(actions[x], colors[x]), r, c)
+
+        # Counter actions
+        actions = ['Pass', 'Block', 'Challenge']
+        colors = [None, '#00856f', '#a33c00']
+        for x in range(len(actions)):
+            per_row = 4
+            r = x // per_row
+            c = x % per_row
+            self.counter_actions.addWidget(ActionButton(actions[x], colors[x]), r, c)        
+
+        self.layout.addLayout(self.main_actions)
+        self.setLayout(self.layout)
+
+
+class ActionButton(QPushButton):
+    default = '#606060'
+    grayedOut = '#909090'
+
+    def __init__(self, name, color=None):
+        super().__init__(name)
+        self.setFixedSize(100, 100)
+        self.color = color if color is not None else ActionButton.default
+        self.setStyleSheet(f'background-color: {self.color};')
+
+    def disable(self):
+        self.setEnabled(False)
+        self.setStyleSheet(f'background-color: {ActionButton.grayedOut};')
+
+    def enable(self):
+        self.setEnabled(True)
+        self.setStyleSheet(f'background-color: {self.color};')
 
 
 class TopMenu(QWidget):
