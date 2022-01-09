@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 
-class Card(QWidget):
+class Card(QFrame):
     name_colors = {
         'Assassin': 'black',
         'Ambassador': 'green',
@@ -16,9 +16,14 @@ class Card(QWidget):
         If a name is given, show the (face up) card's name and color.
         '''
         super().__init__()
+        self.setLineWidth(3)
         self.setFixedSize(100, 150)
 
-        self.hidden = name is None
+        # Highlight on hover and press
+        self.is_hidden = name is None
+        self.is_highlighted = False
+        self.is_selected = False
+        self.is_selectable = False
         
         self.layout = QHBoxLayout()
 
@@ -31,7 +36,7 @@ class Card(QWidget):
 
         self.setAutoFillBackground(True)
 
-        if self.hidden:
+        if self.is_hidden:
             self.set_hidden()
         else:
             self.set_card(name)
@@ -46,7 +51,7 @@ class Card(QWidget):
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor(self.name_colors[name]))
         self.setPalette(p)
-        self.hidden = False
+        self.is_hidden = False
 
     def set_hidden(self):
         # Render a card hidden by the opponent
@@ -54,17 +59,48 @@ class Card(QWidget):
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor('darkGray'))
         self.setPalette(p)
-        self.hidden = True
+        self.is_hidden = True
 
     def set_eliminated(self):
         # Indicate when card is eliminated
-        if self.hidden:
+        if self.is_hidden:
             print('Show the card details before setting it as eliminated.')
             return
-        
+
         self.elim_lbl = QLabel('ELIMINATED', self)
         self.elim_lbl.setStyleSheet('color: red; font-weight: bold;')
         self.elim_lbl.move(12, 0)
+
+    def set_highlighted(self, val):
+        # val: True or False
+        self.is_highlighted = val
+        if val:
+            self.setFrameShape(QFrame.Shape.Panel)
+        else:
+            self.setFrameShape(QFrame.Shape.NoFrame)
+
+    def set_selected(self, val):
+        # val: True or False
+        self.is_selected = val
+        if val:
+            self.setFrameShadow(QFrame.Shadow.Sunken)
+        else:
+            self.setFrameShadow(QFrame.Shadow.Plain)
+
+    def enterEvent(self, event):
+        # Highlight on hover
+        if self.is_selectable and not self.is_selected:
+            self.set_highlighted(True)
+
+    def leaveEvent(self, event):
+        # Unhighlight
+        if self.is_highlighted and not self.is_selected:
+            self.set_highlighted(False)
+
+    def mousePressEvent(self, event):
+        # Select a card
+        if self.is_selectable:
+            self.set_selected(not self.is_selected)
 
 
 # Section of the board for all parts relating to a single player
