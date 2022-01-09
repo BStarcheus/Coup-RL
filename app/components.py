@@ -178,7 +178,87 @@ class TopMenu(QWidget):
 
         self.quit_btn = QPushButton('Quit', self)
         self.rules_btn = QPushButton('Rules', self)
+        self.rules = Rules()
+        self.rules_btn.clicked.connect(self.rules.show)
 
         self.layout.addWidget(self.quit_btn)
         self.layout.addWidget(self.rules_btn)
         self.setLayout(self.layout)
+
+
+class Rules(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Rules')
+        self.setFixedSize(580, 350)
+        
+        self.text = QTextEdit()
+        self.text.setHtml('''
+        <style type="text/css">
+        table  {border-collapse:collapse;border-spacing:0;}
+        table td {border:1px solid grey;padding:10px 5px;}
+        table th {border:1px solid grey;padding:10px 5px;}
+        </style>
+        <table>
+        <thead>
+        <tr>
+            <th>Character</th>
+            <th>Action</th>
+            <th>Effect</th>
+            <th>Counteraction</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>-</td>
+            <td>Income</td>
+            <td>Take 1 coin</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td>-</td>
+            <td>Foreign Aid</td>
+            <td>Take 2 coins</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td>-</td>
+            <td>Coup</td>
+            <td>Pay 7 coins. Choose player to lose a card.</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td style="background-color:purple">Duke</td>
+            <td>Tax</td>
+            <td>Take 3 coins</td>
+            <td>Blocks foreign aid</td>
+        </tr>
+        <tr>
+            <td style="background-color:black">Assassin</td>
+            <td>Assassinate</td>
+            <td>Pay 3 coins. Choose player to lose a card.</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td style="background-color:green">Ambassador</td>
+            <td>Exchange</td>
+            <td>Exchange cards with deck</td>
+            <td>Blocks stealing</td>
+        </tr>
+        <tr>
+            <td style="background-color:blue">Captain</td>
+            <td>Steal</td>
+            <td>Take 2 coins from another player</td>
+            <td>Blocks stealing</td>
+        </tr>
+        <tr>
+            <td style="background-color:red">Contessa</td>
+            <td>X</td>
+            <td>X</td>
+            <td>Blocks assassination</td>
+        </tr>
+        </tbody>
+        </table>
+        ''')
+        self.text.setReadOnly(True)
+        self.setCentralWidget(self.text)
