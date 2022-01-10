@@ -1,4 +1,6 @@
 from components import *
+import gym
+import gym_coup
 
 class Board(QWidget):
     def __init__(self):
@@ -19,6 +21,8 @@ class Board(QWidget):
         self.game_setup()
 
     def game_setup(self):
+        self.env = gym.make('coup-v0')
+
         # Temp
         self.p1.add_card('Assassin')
         self.p1.add_card('Duke')
@@ -26,3 +30,6 @@ class Board(QWidget):
         self.p2.add_card(None)
         self.p1.set_coins(2)
         self.p2.set_coins(2)
+
+    def refresh(self):
+        pass
