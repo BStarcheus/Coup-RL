@@ -133,8 +133,14 @@ class Player(QWidget):
         self.layout.addLayout(self._layout)
         self.setLayout(self.layout)
 
-    def add_card(self, name):
+    def get_card(self, ind):
+        return self.cards.itemAt(ind).widget()
+
+    def add_card(self, name: str):
         card = Card(name)
+        self.cards.addWidget(card)
+
+    def add_card(self, card: Card):
         self.cards.addWidget(card)
 
     def remove_card(self, ind):

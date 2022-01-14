@@ -3,11 +3,6 @@ import numpy as np
 from random import shuffle
 
 # Cards
-CARD_NAMES = ['Assassin',
-              'Ambassador',
-              'Captain',
-              'Contessa',
-              'Duke']
 ASSASSIN   = 0
 AMBASSADOR = 1
 CAPTAIN    = 2
@@ -34,13 +29,28 @@ CHALLENGE          = 15
 LOSE_CARD_1        = 16
 LOSE_CARD_2        = 17
 
+class Card:
+    names = ['Assassin',
+             'Ambassador',
+             'Captain',
+             'Contessa',
+             'Duke']
+    def __init__(self, val, is_face_up=False):
+        self.val = val
+        self.is_face_up = is_face_up
+
+    def get_name(self):
+        return Card.names[self.val]
+
+    def __lt__(self, other):
+        return (self.val < other.val or
+                (self.val == other.val and self.is_face_up < other.is_face_up))
 
 class Player:
     def __init__(self, id, is_human=False):
         self.id = id
         self.is_human = is_human
         self.cards = []
-        self.is_card_face_up = [False, False]
         self.coins = 2
         self.last_action = None
 
@@ -57,11 +67,38 @@ class Player:
     def remove_coins(self, num):
         self.coins -= num
 
-    def has_face_down_card(self, card):
+    def has_face_down_card(self, card_val):
         for i in range(2):
-            if self.cards[i] == card and not self.is_card_face_up[i]:
+            c = self.cards[i]
+            if c.val == card_val and not c.is_face_up:
                 return True
         return False
+
+    def get_obs(self):
+        '''
+        Return list of:
+            Cards           Alph sorted hand for 1 player
+            Is face up      If cards are face up or down
+            # coins         (0 - 12)
+            Last action
+        '''
+        c1 = self.cards[0]
+        c2 = self.cards[1]
+        return [c1.val,
+                c2.val,
+                c1.is_face_up,
+                c2.is_face_up,
+                self.coins,
+                self.last_action]
+
+    def _sort_cards(self):
+        '''
+        Always keep the cards sorted in alphabetical order.
+        Since get_obs is run on each iter, decrease the amount of
+        sorts we need by only sorting when cards are exchanged or lost.
+        '''
+        self.cards.sort()
+
 
 class Game:
     '''
@@ -72,7 +109,7 @@ class Game:
         self.players = [Player(i, True) for i in range(num_human_players)]
         self.players += [Player(i+num_human_players, False) for i in range(2-num_human_players)]
 
-        self.deck = 3 * [i for i in range(len(CARD_NAMES))]
+        self.deck = 3 * [Card(i) for i in range(len(Card.names))]
         self.shuffle_deck()
         self.deal_cards()
 
@@ -92,8 +129,8 @@ class Game:
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
-        print(f'P{p_ind + 1}:', CARD_NAMES[p.cards[0]], '|', p.is_card_face_up[0], '|',
-                                CARD_NAMES[p.cards[1]], '|', p.is_card_face_up[1], '|',
+        print(f'P{p_ind + 1}:', p.cards[0].get_name(), '|', p.cards[0].is_face_up, '|',
+                                p.cards[1].get_name(), '|', p.cards[1].is_face_up, '|',
               p.coins, '|', '_' if p.last_action == None else CoupEnv.actions[p.last_action])
 
     def render(self):
@@ -112,6 +149,8 @@ class Game:
         for _ in range(2):
             for p in self.players:
                 p.add_card(self.draw_card())
+        self.players[0]._sort_cards()
+        self.players[1]._sort_cards()
 
     def next_player_turn(self):
         '''
@@ -145,10 +184,10 @@ class Game:
 
         def valid_lose_card_options():
             valid = []
-            if not curr_player.is_card_face_up[0]:
+            if not curr_player.cards[0].is_face_up:
                 # Card is still in play. Can choose to give it up.
                 valid += [LOSE_CARD_1]
-            if not curr_player.is_card_face_up[1]:
+            if not curr_player.cards[1].is_face_up:
                 # Card is still in play. Can choose to give it up.
                 valid += [LOSE_CARD_2]
             return valid
@@ -202,12 +241,12 @@ class Game:
                 return
             
             valid = [EXCHANGE_RETURN_34]
-            if not curr_player.is_card_face_up[0]:
+            if not curr_player.cards[0].is_face_up:
                 valid += [EXCHANGE_RETURN_13, EXCHANGE_RETURN_14]
-            if not curr_player.is_card_face_up[1]:
+            if not curr_player.cards[1].is_face_up:
                 valid += [EXCHANGE_RETURN_23, EXCHANGE_RETURN_24]
-            if (not curr_player.is_card_face_up[0] and
-                not curr_player.is_card_face_up[1]):
+            if (not curr_player.cards[0].is_face_up and
+                not curr_player.cards[1].is_face_up):
                 valid += [EXCHANGE_RETURN_12]
 
             return valid
@@ -274,6 +313,7 @@ class Game:
             curr_player = self.get_curr_action_player()
             curr_player.add_card(self.draw_card())
             curr_player.add_card(self.draw_card())
+            curr_player._sort_cards()
             # Don't increment turn or action
             # It is still curr_player's choice of which cards to return to the deck
 
@@ -282,6 +322,7 @@ class Game:
         for ind in sorted(lst, reverse=True):
             self.deck.append(curr_player.cards.pop(ind))
         self.shuffle_deck()
+        curr_player._sort_cards()
 
         if self.get_opp_player().lost_challenge:
             # opp still needs to choose a card to lose
@@ -294,18 +335,12 @@ class Game:
         self._exchange_return([0, 1])
 
     def exchange_return_13(self):
-        curr_player = self.get_curr_action_player()
-        curr_player.last_action = EXCHANGE_RETURN_13
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_13
         self._exchange_return([0, 2])
-        # Card 2 has now moved to pos 1
-        curr_player.is_card_face_up[0], curr_player.is_card_face_up[1] = curr_player.is_card_face_up[1], curr_player.is_card_face_up[0]
 
     def exchange_return_14(self):
-        curr_player = self.get_curr_action_player()
-        curr_player.last_action = EXCHANGE_RETURN_14
+        self.get_curr_action_player().last_action = EXCHANGE_RETURN_14
         self._exchange_return([0, 3])
-        # Card 2 has now moved to pos 1
-        curr_player.is_card_face_up[0], curr_player.is_card_face_up[1] = curr_player.is_card_face_up[1], curr_player.is_card_face_up[0]
 
     def exchange_return_23(self):
         self.get_curr_action_player().last_action = EXCHANGE_RETURN_23
@@ -396,7 +431,8 @@ class Game:
                 # curr_player loses the game
                 # Lose 1 card for assassination
                 # and 1 card for losing challenge
-                curr_player.is_card_face_up = [True, True]
+                curr_player.cards[0].is_face_up = True
+                curr_player.cards[1].is_face_up = True
                 self.game_over = True
             else:
                 opp_player.lost_challenge = True
@@ -476,7 +512,8 @@ class Game:
                     # opp_player loses the game
                     # Lose 1 card for assassination
                     # and 1 card for losing challenge
-                    opp_player.is_card_face_up = [True, True]
+                    opp_player.cards[0].is_face_up = True
+                    opp_player.cards[1].is_face_up = True
                     self.game_over = True
 
             elif prev_act == STEAL:
@@ -511,28 +548,33 @@ class Game:
             print('Error: cannot challenge', CoupEnv.actions[act])
             return
 
-    def _challenge_fail_replace_card(self, card):
+    def _challenge_fail_replace_card(self, card_val):
         # If the challenged player actually had the correct card,
         # shuffle it into the deck and give them a new card
         p = self.get_opp_player()
         for i in range(2):
-            if p.cards[i] == card and not p.is_card_face_up[i]:
-                self.deck.append(card)
+            c = p.cards[i]
+            if c.val == card_val and not c.is_face_up:
+                self.deck.append(c)
                 self.shuffle_deck()
                 p.cards[i] = self.draw_card()
+                p._sort_cards()
                 return
+        
+        print(f'Error: could not replace card {Card.names[card_val]}')
 
-    def _lose_card(self, card):
+    def _lose_card(self, card_ind):
         curr_player = self.get_curr_action_player()
-        if curr_player.is_card_face_up[card]:
+        if curr_player.cards[card_ind].is_face_up:
             print('Error: cannot lose a card that is already face up')
             return
 
-        curr_player.is_card_face_up[card] = True
+        curr_player.cards[card_ind].is_face_up = True
         curr_player.lost_challenge = False
+        curr_player._sort_cards()
 
         # Check if the player has no cards remaining
-        self.game_over = not (False in curr_player.is_card_face_up)
+        self.game_over = not (False in [x.is_face_up for x in curr_player.cards])
 
         self.next_player_turn()
 
@@ -609,3 +651,7 @@ class CoupEnv(gym.Env):
         a = self.game.get_valid_actions()
         print([self.actions[x] for x in a])
         return a
+
+    def get_obs(self):
+        # TODO
+        pass

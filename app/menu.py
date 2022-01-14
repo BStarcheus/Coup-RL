@@ -48,3 +48,10 @@ class Menu(QWidget):
         self.layout.setAlignment(self.start_btn, Qt.AlignmentFlag.AlignCenter)
 
         self.setLayout(self.layout)
+
+    def get_form_data(self):
+        return (
+            self.file_name.text(),
+            self.rd1.isChecked(),
+            self.rd3.isChecked()
+        )
