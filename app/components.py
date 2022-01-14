@@ -136,12 +136,14 @@ class Player(QWidget):
     def get_card(self, ind):
         return self.cards.itemAt(ind).widget()
 
-    def add_card(self, name: str):
-        card = Card(name)
-        self.cards.addWidget(card)
-
-    def add_card(self, card: Card):
-        self.cards.addWidget(card)
+    def add_card(self, card):
+        if isinstance(card, str):
+            card = Card(card)
+            self.cards.addWidget(card)
+        elif isinstance(card, Card):
+            self.cards.addWidget(card)
+        else:
+            print(f'Error: add_card does not accept param type {type(card)}')
 
     def remove_card(self, ind):
         self.cards.removeWidget(self.cards.itemAt(ind))
