@@ -1,0 +1,1 @@
+from coup_rl.human_v_agent import Human_v_Agent

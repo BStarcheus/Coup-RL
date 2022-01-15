@@ -17,8 +17,12 @@ class Coup(QMainWindow):
         agent_filename, is_training, user_first = self.menu_widget.get_form_data()
         # TODO init rl agent
         if not user_first:
-            self.board_widget.env.game.whose_turn = 1
-            self.board_widget.env.game.whose_action = 1
+            # Agent has the first turn
+            self.board_widget.game.whose_turn = 1
+            self.board_widget.game.whose_action = 1
+            self.board_widget._game.agent_step()
+            self.board_widget.actions.disable_all()
+            self.board_widget.refresh()
 
         self.setCentralWidget(self.board_widget)
 

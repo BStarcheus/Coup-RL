@@ -146,7 +146,7 @@ class Player(QWidget):
             print(f'Error: add_card does not accept param type {type(card)}')
 
     def remove_card(self, ind):
-        self.cards.removeWidget(self.cards.itemAt(ind))
+        self.cards.removeWidget(self.cards.itemAt(ind).widget())
 
     def set_card(self, ind, name):
         if ind < 0 or ind > 1:
@@ -174,7 +174,7 @@ class ActionSelector(QWidget):
         self.counter_actions = QGridLayout()
 
         # Main actions
-        actions = ['Income', 'Foreign Aid', 'Coup', 'Tax', 'Assassinate', 'Exchange', 'Steal']
+        actions = ['Income', 'Foreign aid', 'Coup', 'Tax', 'Assassinate', 'Exchange', 'Steal']
         colors = [None, None, None, 'purple', 'black', 'green', 'blue']
         for x in range(len(actions)):
             per_row = 4
@@ -192,7 +192,17 @@ class ActionSelector(QWidget):
             self.counter_actions.addWidget(ActionButton(actions[x], colors[x]), r, c)        
 
         self.layout.addLayout(self.main_actions)
+        self.layout.addLayout(self.counter_actions)
         self.setLayout(self.layout)
+
+    def disable_all(self):
+        for btn in self.findChildren(ActionButton):
+            btn.disable()
+    
+    def enable(self, lst):
+        for btn in self.findChildren(ActionButton):
+            if btn.text() in lst:
+                btn.enable()
 
 
 class ActionButton(QPushButton):

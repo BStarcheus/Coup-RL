@@ -22,9 +22,10 @@ $ pip install -r app/requirements.txt
 $ pip install -r gym-coup/requirements.txt
 ```
 
-Build and install the gym environment:
+Build and install the gym environment and RL agents:
 ```bash
 $ pip install -e ./gym-coup
+$ pip install -e ./rl
 ```
 
 ## Run the Desktop App

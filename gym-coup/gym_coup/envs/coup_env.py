@@ -109,7 +109,7 @@ class Game:
         self.players = [Player(i, True) for i in range(num_human_players)]
         self.players += [Player(i+num_human_players, False) for i in range(2-num_human_players)]
 
-        self.deck = 3 * [Card(i) for i in range(len(Card.names))]
+        self.deck = [Card(i) for _ in range(3) for i in range(len(Card.names))]
         self.shuffle_deck()
         self.deal_cards()
 
@@ -618,7 +618,7 @@ class CoupEnv(gym.Env):
 
     def __init__(self, num_human_players=0):
         self.num_human_players = num_human_players
-        self.game = Game(num_human_players)
+        self.game = None
 
         self.action_space = gym.spaces.Discrete(len(self.actions))
 
@@ -639,18 +639,39 @@ class CoupEnv(gym.Env):
         self.observation_space = gym.spaces.Box(low, high, dtype='uint8')
 
     def step(self, action):
-        getattr(self.game, self.actions[action])()
+        if isinstance(action, int):
+            action = self.actions[action]
+        elif isinstance(action, str):
+            pass
+        else:
+            print(f'Error: cannot step with action type {type(action)}')
+            return
+
+        getattr(self.game, action)()
+
+        # TODO return obs, reward, done, info
+        return (list(), 0, self.game.game_over, dict())
     
     def reset(self):
         self.game = Game(self.num_human_players)
 
     def render(self, mode='human'):
-        self.game.render()
+        if self.game is not None:
+            self.game.render()
 
-    def get_valid_actions(self):
+    def get_valid_actions(self, text=False):
+        '''
+        Get the valid actions, in either number or text form
+        '''
+        if self.game is None:
+            return None
+
         a = self.game.get_valid_actions()
         print([self.actions[x] for x in a])
-        return a
+        if text:
+            return [self.actions[x] for x in a]
+        else:
+            return a
 
     def get_obs(self):
         # TODO
