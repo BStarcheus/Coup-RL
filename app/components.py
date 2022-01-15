@@ -72,8 +72,9 @@ class Card(QFrame):
             return
 
         self.elim_lbl = QLabel('ELIMINATED', self)
-        self.elim_lbl.setStyleSheet('color: red; font-weight: bold;')
-        self.elim_lbl.move(12, 0)
+        self.elim_lbl.setStyleSheet('color: red; font-weight: bold; background-color: black;')
+        self.elim_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.elim_lbl.move(0, 0)
 
     def set_highlighted(self, val):
         # val: True or False

@@ -86,4 +86,3 @@ class Board(QWidget):
 
 # TODO exhange return and lose card 1 / 2
 # display game over
-# fix red on red eliminated text
