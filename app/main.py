@@ -1,6 +1,7 @@
 from menu import *
 from board import *
 import sys
+import argparse
 
 class Coup(QMainWindow):
     def __init__(self):
@@ -32,6 +33,17 @@ class Coup(QMainWindow):
         self.setCentralWidget(self.menu_widget)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Coup RL Desktop App')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-i', '--info', action='store_true', help='Log at the info level')
+    group.add_argument('-d', '--debug', action='store_true', help='Log at the debug level')
+    args = parser.parse_args()
+
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    elif args.info:
+        logger.setLevel(logging.INFO)
+
     app = QApplication(sys.argv)
     main_app = Coup()
     main_app.show()

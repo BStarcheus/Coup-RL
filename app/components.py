@@ -1,6 +1,11 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger('app')
+
 
 class Card(QFrame):
     name_colors = {
@@ -41,11 +46,10 @@ class Card(QFrame):
         else:
             self.set_card(name)
 
-    def set_card(self, name=None):
+    def set_card(self, name):
         # Set the card text and color
         if name not in self.name_colors:
-            print(f'Error: Cannot set to unknown card type {name}')
-            return
+            raise RuntimeError(f'Cannot set to unknown card type {name}')
 
         self.lbl.setText(name)
         p = self.palette()
@@ -64,7 +68,7 @@ class Card(QFrame):
     def set_eliminated(self):
         # Indicate when card is eliminated
         if self.is_hidden:
-            print('Show the card details before setting it as eliminated.')
+            logger.warning('Show the card details before setting it as eliminated.')
             return
 
         self.elim_lbl = QLabel('ELIMINATED', self)
@@ -143,16 +147,12 @@ class Player(QWidget):
         elif isinstance(card, Card):
             self.cards.addWidget(card)
         else:
-            print(f'Error: add_card does not accept param type {type(card)}')
+            raise TypeError(f'add_card does not accept param type {type(card)}')
 
     def remove_card(self, ind):
         self.cards.removeWidget(self.cards.itemAt(ind).widget())
 
     def set_card(self, ind, name):
-        if ind < 0 or ind > 1:
-            print(f'Card index {ind} invalid')
-            return
-
         card = Card(name)
         self.cards.replaceWidget(self.cards.itemAt(ind), card)
 

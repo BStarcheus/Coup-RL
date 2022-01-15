@@ -1,6 +1,10 @@
 import gym
 import numpy as np
 from random import shuffle
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger('gym_coup')
 
 # Cards
 ASSASSIN   = 0
@@ -129,13 +133,13 @@ class Game:
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
-        print(f'P{p_ind + 1}:', p.cards[0].get_name(), '|', p.cards[0].is_face_up, '|',
-                                p.cards[1].get_name(), '|', p.cards[1].is_face_up, '|',
-              p.coins, '|', '_' if p.last_action == None else CoupEnv.actions[p.last_action])
+        logger.info(f'P{p_ind + 1}: {p.cards[0].get_name()} | {p.cards[0].is_face_up} | ' + 
+                                  f'{p.cards[1].get_name()} | {p.cards[1].is_face_up} | ' +
+            f'{p.coins} | {"_" if p.last_action == None else CoupEnv.actions[p.last_action]}')
 
     def render(self):
-        print('Turn', self.turn_count)
-        print('Player: Card1 | FaceUp | Card2 | FaceUp | Coins | LastAction')
+        logger.info(f'Turn {self.turn_count}')
+        logger.info('Player: Card1 | FaceUp | Card2 | FaceUp | Coins | LastAction')
         self.print_player(0)
         self.print_player(1)
 
@@ -230,15 +234,13 @@ class Game:
 
                 return valid
             else:
-                print('Error: invalid action progression')
-                return
+                raise RuntimeError('Invalid action progression')
 
         elif curr_player.last_action == EXCHANGE:
             # It is curr_player's turn, and opp_player has approved the exchange
 
             if len(curr_player.cards) < 4:
-                print('Error: player mid-exchange should have 4 cards including any eliminated')
-                return
+                raise RuntimeError('Player mid-exchange should have 4 cards including any eliminated')
             
             valid = [EXCHANGE_RETURN_34]
             if not curr_player.cards[0].is_face_up:
@@ -256,7 +258,7 @@ class Game:
             return [PASS_, CHALLENGE]
         
         else:
-            print('Error: invalid action progression')
+            raise RuntimeError('Invalid action progression')
 
 
     def income(self):
@@ -278,8 +280,7 @@ class Game:
     def coup(self):
         curr_player = self.get_curr_action_player()
         if curr_player.coins < 7:
-            print('Error: not possible to coup with < 7 coins')
-            return
+            raise RuntimeError('Not possible to coup with < 7 coins')
 
         curr_player.remove_coins(7)
         curr_player.last_action = COUP
@@ -384,8 +385,7 @@ class Game:
             self.next_player_turn()
 
         else:
-            print('Error: cannot pass after', CoupEnv.actions[act])
-            return
+            raise RuntimeError(f'Cannot pass after {CoupEnv.actions[act]}')
 
     def block(self):
         act = self.get_opp_player().last_action
@@ -394,8 +394,7 @@ class Game:
             self.get_curr_action_player().last_action = BLOCK
             self.next_player_action()
         else:
-            print('Error: cannot pass after', CoupEnv.actions[act])
-            return
+            raise RuntimeError(f'Cannot pass after {CoupEnv.actions[act]}')
 
     def challenge(self):
         curr_player = self.get_curr_action_player()
@@ -541,12 +540,10 @@ class Game:
                     self.next_player_action()
 
             else:
-                print('Error: cannot block', CoupEnv.actions[prev_act])
-                return
+                raise RuntimeError(f'Cannot block {CoupEnv.actions[prev_act]}')
 
         else:
-            print('Error: cannot challenge', CoupEnv.actions[act])
-            return
+            raise RuntimeError(f'Cannot challenge {CoupEnv.actions[act]}')
 
     def _challenge_fail_replace_card(self, card_val):
         # If the challenged player actually had the correct card,
@@ -561,13 +558,12 @@ class Game:
                 p._sort_cards()
                 return
         
-        print(f'Error: could not replace card {Card.names[card_val]}')
+        raise RuntimeError(f'Tried to replace card {Card.names[card_val]} that was not in player\'s hand')
 
     def _lose_card(self, card_ind):
         curr_player = self.get_curr_action_player()
         if curr_player.cards[card_ind].is_face_up:
-            print('Error: cannot lose a card that is already face up')
-            return
+            raise RuntimeError(f'Cannot lose a card that is already face up')
 
         curr_player.cards[card_ind].is_face_up = True
         curr_player.lost_challenge = False
@@ -644,8 +640,7 @@ class CoupEnv(gym.Env):
         elif isinstance(action, str):
             pass
         else:
-            print(f'Error: cannot step with action type {type(action)}')
-            return
+            raise RuntimeError(f'Cannot step with action type {type(action)}')
 
         getattr(self.game, action)()
 
@@ -667,7 +662,7 @@ class CoupEnv(gym.Env):
             return None
 
         a = self.game.get_valid_actions()
-        print([self.actions[x] for x in a])
+        logger.debug(f'Valid actions: {[self.actions[x] for x in a]}')
         if text:
             return [self.actions[x] for x in a]
         else:

@@ -26,14 +26,13 @@ class Board(QWidget):
 
     def game_setup(self):
         # agent and game env with RL algo
-        self._game = Human_v_Agent()
+        self._game = Human_v_Agent(logger.level)
         # gym env with game logic
         self.game = self._game.env.game
 
         self.refresh()
 
     def refresh(self):
-        # TODO logging levels
         self.game.render()
 
         if not self.game.game_over and self.game.whose_action == 0:
