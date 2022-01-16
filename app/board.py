@@ -35,7 +35,13 @@ class Board(QWidget):
     def refresh(self):
         self.game.render()
 
-        if not self.game.game_over and self.game.whose_action == 0:
+        if self.game.game_over:
+            self.actions.close()
+            # Check who won the game
+            user_won = False in [x.is_face_up for x in self.game.players[0].cards]
+            self.layout.replaceWidget(self.actions, GameOver(user_won))
+
+        elif self.game.whose_action == 0:
             valid = self._game.env.get_valid_actions(text=True)
             valid = [x.replace('_', ' ').capitalize().strip() for x in valid]
             self.actions.enable(valid)
@@ -85,4 +91,3 @@ class Board(QWidget):
         self.refresh()
 
 # TODO exhange return and lose card 1 / 2
-# display game over

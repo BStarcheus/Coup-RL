@@ -317,3 +317,12 @@ class Rules(QMainWindow):
         ''')
         self.text.setReadOnly(True)
         self.setCentralWidget(self.text)
+
+
+class GameOver(QLabel):
+    def __init__(self, user_won):
+        text = 'You Won!' if user_won else 'You Lost'
+        super().__init__(text)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        color = 'green' if user_won else 'red'
+        self.setStyleSheet(f'color: {color}; font-size: 32px;')

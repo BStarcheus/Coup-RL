@@ -433,6 +433,7 @@ class Game:
                 curr_player.cards[0].is_face_up = True
                 curr_player.cards[1].is_face_up = True
                 self.game_over = True
+                logger.info('Game Over')
             else:
                 opp_player.lost_challenge = True
                 
@@ -514,6 +515,7 @@ class Game:
                     opp_player.cards[0].is_face_up = True
                     opp_player.cards[1].is_face_up = True
                     self.game_over = True
+                    logger.info('Game Over')
 
             elif prev_act == STEAL:
                 if opp_player.has_face_down_card(CAPTAIN):
@@ -571,6 +573,9 @@ class Game:
 
         # Check if the player has no cards remaining
         self.game_over = not (False in [x.is_face_up for x in curr_player.cards])
+
+        if self.game_over:
+            logger.info('Game Over')
 
         self.next_player_turn()
 
