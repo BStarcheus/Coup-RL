@@ -16,6 +16,8 @@ class Board(QWidget):
         for btn in self.actions.findChildren(ActionButton):
             btn.clicked.connect(self.action_btn_click)
 
+        self.select_cards_instructions = QLabel('', self)
+
         self.confirm_btn = QPushButton('Confirm', self)
         self.confirm_btn.setEnabled(False)
         self.confirm_btn.setFixedSize(70, 30)
@@ -24,6 +26,7 @@ class Board(QWidget):
         self.layout.addWidget(self.top_menu)
         self.layout.addWidget(self.p2)
         self.layout.addWidget(self.actions)
+        self.layout.addWidget(self.select_cards_instructions, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.p1)
         self.layout.addWidget(self.confirm_btn, alignment=Qt.AlignmentFlag.AlignCenter)
         self.confirm_btn.hide()
@@ -46,6 +49,7 @@ class Board(QWidget):
 
         if self.game.game_over:
             self.actions.close()
+            self.disable_card_select()
             # Check who won the game
             user_won = False in [x.is_face_up for x in self.game.players[0].cards]
             self.layout.replaceWidget(self.actions, GameOver(user_won))
@@ -82,12 +86,23 @@ class Board(QWidget):
 
             # If necessary, allow P1 cards to be selected
             if self.game.whose_action == 0 and i == 0:
+                text = ''
                 if 'Lose card 1' in valid or 'Lose card 2' in valid:
                     # Player will select which card to lose
                     p.num_selectable = 1
+
+                    if self._game.env.actions[self.game.players[1].last_action] == 'assassinate':
+                        # Opponent is assassinating
+                        text = 'Choose a card to be eliminated and press Confirm\nOR\nBlock or Challenge the assassination'
+                    else:
+                        # Player's only option is losing a card
+                        text = 'Choose a card to be eliminated and press Confirm.'
                 elif 'Exchange return 34' in valid:
-                    # Player will select which 2 cards to return to deck
                     p.num_selectable = 2
+                    text = 'Choose 2 cards to return to the deck and press Confirm.'
+                else:
+                    # Disable in the case that player chose block/challenge against assassinate
+                    self.disable_card_select()
 
                 if p.num_selectable > 0:
                     # Set cards to selectable
@@ -95,6 +110,9 @@ class Board(QWidget):
 
                     # Show confirm button
                     self.confirm_btn.show()
+
+                    # Show instructions text
+                    self.select_cards_instructions.setText(text)
 
     def action_btn_click(self):
         # Prevent more clicks
@@ -108,15 +126,23 @@ class Board(QWidget):
         self._game.step(action)
         self.refresh()
 
-    def card_select_confirm_click(self):
+    def disable_card_select(self):
         # Hide confirm button
         self.confirm_btn.setEnabled(False)
         self.confirm_btn.hide()
 
+        # Hide instructions text
+        self.select_cards_instructions.setText('')
+
         # Reset card selectable properties
-        # Each card will be recreated in refresh() below, so no need to deselect
         self.p1.num_selectable = 0
         self.p1.num_selected = 0
+
+    def card_select_confirm_click(self):
+        self.disable_card_select()
+
+        # If it was lose_card for assassination, disable the other actions
+        self.actions.disable_all()
 
         cards = self.p1.get_selected_cards_index()
         cards = [x+1 for x in cards]
@@ -132,7 +158,3 @@ class Board(QWidget):
 
         self._game.step(action)
         self.refresh()
-
-
-# TODO add text instructions to choose cards to return/lose
-# For assassination, they can choose a card to lose or block/challenge
