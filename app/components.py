@@ -15,20 +15,20 @@ class Card(QFrame):
         'Contessa': 'red',
         'Duke': 'purple',
     }
-    def __init__(self, name=None):
+    def __init__(self, name=None, parent=None):
         '''
         By default, no name given shows a face down card.
         If a name is given, show the (face up) card's name and color.
         '''
-        super().__init__()
+        super().__init__(parent=parent)
         self.setLineWidth(3)
         self.setFixedSize(100, 150)
 
         # Highlight on hover and press
         self.is_hidden = name is None
-        self.is_highlighted = False
         self.is_selected = False
         self.is_selectable = False
+        self.is_eliminated = False
         
         self.layout = QHBoxLayout()
 
@@ -71,6 +71,7 @@ class Card(QFrame):
             logger.warning('Show the card details before setting it as eliminated.')
             return
 
+        self.is_eliminated = True
         self.elim_lbl = QLabel('ELIMINATED', self)
         self.elim_lbl.setStyleSheet('color: red; font-weight: bold; background-color: black;')
         self.elim_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -78,7 +79,6 @@ class Card(QFrame):
 
     def set_highlighted(self, val):
         # val: True or False
-        self.is_highlighted = val
         if val:
             self.setFrameShape(QFrame.Shape.Panel)
         else:
@@ -88,8 +88,10 @@ class Card(QFrame):
         # val: True or False
         self.is_selected = val
         if val:
+            self.parentWidget().num_selected += 1
             self.setFrameShadow(QFrame.Shadow.Sunken)
         else:
+            self.parentWidget().num_selected -= 1
             self.setFrameShadow(QFrame.Shadow.Plain)
 
     def enterEvent(self, event):
@@ -99,19 +101,20 @@ class Card(QFrame):
 
     def leaveEvent(self, event):
         # Unhighlight
-        if self.is_highlighted and not self.is_selected:
+        if self.is_selectable and not self.is_selected:
             self.set_highlighted(False)
 
     def mousePressEvent(self, event):
         # Select a card
         if self.is_selectable:
             self.set_selected(not self.is_selected)
+            self.parentWidget().check_selected()
 
 
 # Section of the board for all parts relating to a single player
 class Player(QWidget):
-    def __init__(self, name):
-        super().__init__()
+    def __init__(self, name, parent=None):
+        super().__init__(parent=parent)
         self.layout = QVBoxLayout()
         self.msg = QLabel(name)
         self.layout.addWidget(self.msg)
@@ -138,13 +141,15 @@ class Player(QWidget):
         self.layout.addLayout(self._layout)
         self.setLayout(self.layout)
 
+        self.num_selectable = 0
+        self.num_selected = 0
+
     def get_card(self, ind):
         return self.cards.itemAt(ind).widget()
 
     def add_card(self, card):
         if isinstance(card, str):
-            card = Card(card)
-            self.cards.addWidget(card)
+            self.cards.addWidget(Card(name=card, parent=self))
         elif isinstance(card, Card):
             self.cards.addWidget(card)
         else:
@@ -154,7 +159,7 @@ class Player(QWidget):
         self.cards.removeWidget(self.cards.itemAt(ind).widget())
 
     def set_card(self, ind, name):
-        card = Card(name)
+        card = Card(name=name, parent=self)
         self.cards.replaceWidget(self.cards.itemAt(ind), card)
 
     def set_coins(self, num):
@@ -162,6 +167,37 @@ class Player(QWidget):
 
     def set_move(self, action):
         self.move.setText(action)
+
+    def check_selected(self):
+        if self.num_selected < self.num_selectable:
+            # Set all non-eliminated cards to selectable
+            for card in self.findChildren(Card):
+                if not card.is_eliminated:
+                    card.is_selectable = True
+
+            # Disable the confirm button in Board
+            self.parentWidget().confirm_btn.setEnabled(False)
+
+        elif self.num_selected == self.num_selectable:
+            # Prevent any more cards from being selected
+            for card in self.findChildren(Card):
+                if not card.is_selected:
+                    card.is_selectable = False
+
+            # Enable the confirm button in Board
+            self.parentWidget().confirm_btn.setEnabled(True)
+
+        else:
+            raise RuntimeError('Selected too many cards')
+
+    def get_selected_cards_index(self):
+        # Get the indexes of the selected cards
+        cards = self.findChildren(Card)
+        ind = []
+        for i in range(len(cards)):
+            if cards[i].is_selected:
+                ind.append(i)
+        return ind
 
 
 class ActionSelector(QWidget):
