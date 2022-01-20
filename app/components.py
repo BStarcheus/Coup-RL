@@ -248,7 +248,7 @@ class ActionButton(QPushButton):
 
     def __init__(self, name, color=None):
         super().__init__(name)
-        self.setFixedSize(100, 100)
+        self.setFixedSize(90, 90)
         self.color = color if color is not None else ActionButton.default
         self.setStyleSheet(f'background-color: {self.color};')
 
