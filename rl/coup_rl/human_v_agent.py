@@ -9,7 +9,7 @@ logger = logging.getLogger('coup_rl')
 class Human_v_Agent:
     def __init__(self, log_level=None):
         # Make the gym env
-        self.env = gym.make('coup-v0')
+        self.env = gym.make('coup-v0', num_human_players=1)
 
         if log_level is not None:
             # Set the logging level of this package
