@@ -7,9 +7,13 @@ logging.basicConfig()
 logger = logging.getLogger('coup_rl')
 
 class Human_v_Agent:
-    def __init__(self, log_level=None):
+    def __init__(self, p_first_turn, log_level=None):
+        '''
+        p_first_turn: Which player goes first, 0-indexed
+        log_level: coup_rl log level
+        '''
         # Make the gym env
-        self.env = gym.make('coup-v0', num_human_players=1)
+        self.env = gym.make('coup-v0', num_human_players=1, p_first_turn=p_first_turn)
 
         if log_level is not None:
             # Set the logging level of this package

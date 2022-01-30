@@ -2,7 +2,10 @@ from components import *
 from coup_rl import Human_v_Agent
 
 class Board(QWidget):
-    def __init__(self):
+    def __init__(self, p_first_turn):
+        '''
+        p_first_turn: Which player goes first, 0-indexed
+        '''
         super().__init__()
         self.layout = QVBoxLayout()
 
@@ -32,11 +35,14 @@ class Board(QWidget):
         self.confirm_btn.hide()
 
         self.setLayout(self.layout)
-        self.game_setup()
+        self.game_setup(p_first_turn)
 
-    def game_setup(self):
+    def game_setup(self, p_first_turn):
+        '''
+        p_first_turn: Which player goes first, 0-indexed
+        '''
         # agent and game env with RL algo
-        self._game = Human_v_Agent(logger.level)
+        self._game = Human_v_Agent(p_first_turn, log_level=logger.level)
         # gym env with game logic
         self.game = self._game.env.game
 

@@ -109,7 +109,11 @@ class Game:
     2 player Coup game
     Can have any combination of human and cpu players
     '''
-    def __init__(self, num_human_players=0):
+    def __init__(self, num_human_players=0, p_first_turn=0):
+        '''
+        num_human_players: Number of human players in the 2-player game
+        p_first_turn: Which player goes first, 0-indexed
+        '''
         self.players = [Player(i, True) for i in range(num_human_players)]
         self.players += [Player(i+num_human_players, False) for i in range(2-num_human_players)]
 
@@ -119,10 +123,10 @@ class Game:
 
         # P1 = 0, P2 = 1
         # Whose overall turn is it?
-        self.whose_turn = 0
+        self.whose_turn = p_first_turn
         # Turns can include several sub-actions.
         # Who is currently choosing an action?
-        self.whose_action = 0
+        self.whose_action = p_first_turn
 
         self.turn_count = 0
 
@@ -130,6 +134,10 @@ class Game:
         self.is_turn_begin = True
 
         self.game_over = False
+
+        if len(self.players) == 2:
+            # In a 2 player game, the player going first starts with 1 coin instead of 2
+            self.players[p_first_turn].coins = 1
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
@@ -617,8 +625,13 @@ class CoupEnv(gym.Env):
         17: 'lose_card_2'
     }
 
-    def __init__(self, num_human_players=0):
+    def __init__(self, num_human_players=0, p_first_turn=0):
+        '''
+        num_human_players: Number of human players in the 2-player game
+        p_first_turn: Which player goes first, 0-indexed
+        '''
         self.num_human_players = num_human_players
+        self.p_first_turn = p_first_turn
         self.game = None
 
         self.action_space = gym.spaces.Discrete(len(self.actions))
@@ -653,7 +666,7 @@ class CoupEnv(gym.Env):
         return (list(), 0, self.game.game_over, dict())
     
     def reset(self):
-        self.game = Game(self.num_human_players)
+        self.game = Game(self.num_human_players, self.p_first_turn)
 
     def render(self, mode='human'):
         if self.game is not None:
