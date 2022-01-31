@@ -80,20 +80,24 @@ class Player:
 
     def get_obs(self):
         '''
-        Return list of:
-            Cards           Alph sorted hand for 1 player
-            Is face up      If cards are face up or down
-            # coins         (0 - 12)
+        Return the current state of the player
+        Observation:
+            Card 1            (0 - 5)
+            Card 2            (0 - 5)
+            Is card 1 face up (0 - 1)
+            Is card 2 face up (0 - 1)
+            Coins             (0 - 12)
             Last action
         '''
         c1 = self.cards[0]
         c2 = self.cards[1]
+        la = self.last_action if self.last_action is not None else PASS_
         return [c1.val,
                 c2.val,
                 c1.is_face_up,
                 c2.is_face_up,
                 self.coins,
-                self.last_action]
+                la]
 
     def _sort_cards(self):
         '''
@@ -138,6 +142,36 @@ class Game:
         if len(self.players) == 2:
             # In a 2 player game, the player going first starts with 1 coin instead of 2
             self.players[p_first_turn].coins = 1
+
+    def get_obs(self):
+        '''
+        Return the current state of the game
+        Observation:
+            P1 card 1            (0 - 5)
+            P1 card 2            (0 - 5)
+            P2 card 1            (0 - 5)
+            P2 card 2            (0 - 5)
+            P1 is card 1 face up (0 - 1)
+            P1 is card 2 face up (0 - 1)
+            P2 is card 1 face up (0 - 1)
+            P2 is card 2 face up (0 - 1)
+            P1 # coins           (0 - 12)
+            P2 # coins           (0 - 12)
+            P1 last action
+            P2 last action
+            Whose next action  (0, 1)
+        '''
+        p1 = self.players[0].get_obs()
+        p2 = self.players[1].get_obs()
+        return [p1[0], p1[1],
+                p2[0], p2[1],
+                p1[2], p1[3],
+                p2[2], p2[3],
+                p1[4],
+                p2[4],
+                p1[5],
+                p2[5],
+                self.whose_action]
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
@@ -662,9 +696,14 @@ class CoupEnv(gym.Env):
 
         getattr(self.game, action)()
 
-        # TODO return obs, reward, done, info
-        return (list(), 0, self.game.game_over, dict())
-    
+        obs = self.get_obs()
+        logger.debug(f'Observation: {obs}')
+
+        # TODO return reward, info
+        reward = 0
+
+        return (obs, reward, self.game.game_over, dict())
+
     def reset(self):
         self.game = Game(self.num_human_players, self.p_first_turn)
 
@@ -687,5 +726,44 @@ class CoupEnv(gym.Env):
             return a
 
     def get_obs(self):
-        # TODO
-        pass
+        '''
+        Observation:
+            P1 card config     (0 - 14) unique (alph sorted) hands for 1 player
+            P2 card config     (0 - 14)
+            P1 is card face up (0 - 3) each cmb of 2 cards face up and down
+            P2 is card face up (0 - 3)
+            P1 # coins         (0 - 12)
+            P2 # coins         (0 - 12)
+            P1 last action
+            P2 last action
+            Whose next action  (0, 1)
+        Note: some observations will never occur in game
+              ex: All 4 cards are the same. Both players have all cards face up.
+        '''
+        obs = self.game.get_obs()
+    
+        # Collapse the 2 elements for cards into a single element
+        # Card config has only 15 possibilities, not 5*5=25
+        # This reduces the overall state space
+
+        # Go from 25 -> 15 indicies by removing where card1 > card2, since they are always sorted
+        # card1 * 5 + card2 - (card1 * (card1+1))/2
+        c1 = obs[0]
+        c2 = obs[1]
+        p1_cards = c1 * 5 + c2 - (c1 * (c1+1))//2 # // for int
+        c1 = obs[2]
+        c2 = obs[3]
+        p2_cards = c1 * 5 + c2 - (c1 * (c1+1))//2 # // for int
+
+        p1_face_up = obs[4] * 2 + obs[5]
+        p2_face_up = obs[6] * 2 + obs[7]
+
+        return [p1_cards,
+                p2_cards,
+                p1_face_up,
+                p2_face_up,
+                obs[8],
+                obs[9],
+                obs[10],
+                obs[11],
+                obs[12]]
