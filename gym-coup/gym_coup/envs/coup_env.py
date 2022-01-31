@@ -20,13 +20,13 @@ COUP               = 2
 TAX                = 3
 ASSASSINATE        = 4
 EXCHANGE           = 5
-EXCHANGE_RETURN_12 = 6
-EXCHANGE_RETURN_13 = 7
-EXCHANGE_RETURN_14 = 8
-EXCHANGE_RETURN_23 = 9
-EXCHANGE_RETURN_24 = 10
-EXCHANGE_RETURN_34 = 11
-STEAL              = 12
+STEAL              = 6
+EXCHANGE_RETURN_12 = 7
+EXCHANGE_RETURN_13 = 8
+EXCHANGE_RETURN_14 = 9
+EXCHANGE_RETURN_23 = 10
+EXCHANGE_RETURN_24 = 11
+EXCHANGE_RETURN_34 = 12
 PASS_              = 13
 BLOCK              = 14
 CHALLENGE          = 15
@@ -644,13 +644,13 @@ class CoupEnv(gym.Env):
         3:  'tax',
         4:  'assassinate',
         5:  'exchange', # pick up 2 cards from court deck
-        6:  'exchange_return_12', # return cards 1,2 to court deck
-        7:  'exchange_return_13', # return cards 1,3
-        8:  'exchange_return_14', # return cards 1,4
-        9:  'exchange_return_23', # return cards 2,3
-        10: 'exchange_return_24', # return cards 2,4
-        11: 'exchange_return_34', # return cards 3,4
-        12: 'steal',
+        6:  'steal',
+        7:  'exchange_return_12', # return cards 1,2 to court deck
+        8:  'exchange_return_13', # return cards 1,3
+        9:  'exchange_return_14', # return cards 1,4
+        10: 'exchange_return_23', # return cards 2,3
+        11: 'exchange_return_24', # return cards 2,4
+        12: 'exchange_return_34', # return cards 3,4
         13: 'pass_',       # only an option when asked whether you'd
                            # like to block or challenge your opponent's last move
         14: 'block',       # block the opponent's move

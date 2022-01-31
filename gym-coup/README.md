@@ -16,6 +16,6 @@ There are 18 actions [defined here](https://github.com/BStarcheus/coup-rl/blob/m
 For example:
 ```python
 env.step(0)  # P1 takes 1 coin of income
-env.step(12) # P2 attempts to steal
+env.step(6) # P2 attempts to steal
 env.step(13) # P1 passes, allowing the steal to happen
 ```
