@@ -143,9 +143,12 @@ class Game:
             # In a 2 player game, the player going first starts with 1 coin instead of 2
             self.players[p_first_turn].coins = 1
 
-    def get_obs(self):
+    def get_obs(self, p2_view=False):
         '''
         Return the current state of the game
+
+        p2_view: Whether to get the observation from P2's view/perspective
+
         Observation:
             P1 card 1            (0 - 5)
             P1 card 2            (0 - 5)
@@ -161,8 +164,14 @@ class Game:
             P2 last action
             Whose next action  (0, 1)
         '''
-        p1 = self.players[0].get_obs()
-        p2 = self.players[1].get_obs()
+        if p2_view:
+            p1_ind = 1
+            p2_ind = 0
+        else:
+            p1_ind = 0
+            p2_ind = 1
+        p1 = self.players[p1_ind].get_obs()
+        p2 = self.players[p2_ind].get_obs()
         return [p1[0], p1[1],
                 p2[0], p2[1],
                 p1[2], p1[3],
@@ -694,9 +703,14 @@ class CoupEnv(gym.Env):
         else:
             raise RuntimeError(f'Cannot step with action type {type(action)}')
 
+        # Is it P2's turn?
+        is_p2 = self.game.whose_action == 1
+
         getattr(self.game, action)()
 
-        obs = self.get_obs()
+        # Get the observation from the perspective of
+        # the player who just took the action
+        obs = self.get_obs(is_p2)
         logger.debug(f'Observation: {obs}')
 
         # TODO return reward, info
@@ -725,8 +739,12 @@ class CoupEnv(gym.Env):
         else:
             return a
 
-    def get_obs(self):
+    def get_obs(self, p2_view=False):
         '''
+        Return the current state of the environment
+
+        p2_view: Whether to get the observation from P2's view/perspective
+
         Observation:
             P1 card config     (0 - 14) unique (alph sorted) hands for 1 player
             P2 card config     (0 - 14)
@@ -740,7 +758,7 @@ class CoupEnv(gym.Env):
         Note: some observations will never occur in game
               ex: All 4 cards are the same. Both players have all cards face up.
         '''
-        obs = self.game.get_obs()
+        obs = self.game.get_obs(p2_view)
     
         # Collapse the 2 elements for cards into a single element
         # Card config has only 15 possibilities, not 5*5=25
