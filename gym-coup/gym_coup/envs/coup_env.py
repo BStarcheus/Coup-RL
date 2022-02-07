@@ -81,6 +81,7 @@ class Player:
     def get_obs(self):
         '''
         Return the current state of the player
+
         Observation:
             Card 1            (0 - 5)
             Card 2            (0 - 5)
@@ -92,12 +93,12 @@ class Player:
         c1 = self.cards[0]
         c2 = self.cards[1]
         la = self.last_action if self.last_action is not None else PASS_
-        return [c1.val,
+        return (c1.val,
                 c2.val,
                 c1.is_face_up,
                 c2.is_face_up,
                 self.coins,
-                la]
+                la)
 
     def _sort_cards(self):
         '''
@@ -172,7 +173,7 @@ class Game:
             p2_ind = 1
         p1 = self.players[p1_ind].get_obs()
         p2 = self.players[p2_ind].get_obs()
-        return [p1[0], p1[1],
+        return (p1[0], p1[1],
                 p2[0], p2[1],
                 p1[2], p1[3],
                 p2[2], p2[3],
@@ -180,7 +181,7 @@ class Game:
                 p2[4],
                 p1[5],
                 p2[5],
-                self.whose_action]
+                self.whose_action)
 
     def print_player(self, p_ind):
         p = self.players[p_ind]
@@ -776,7 +777,7 @@ class CoupEnv(gym.Env):
         p1_face_up = obs[4] * 2 + obs[5]
         p2_face_up = obs[6] * 2 + obs[7]
 
-        return [p1_cards,
+        return (p1_cards,
                 p2_cards,
                 p1_face_up,
                 p2_face_up,
@@ -784,4 +785,4 @@ class CoupEnv(gym.Env):
                 obs[9],
                 obs[10],
                 obs[11],
-                obs[12]]
+                obs[12])
