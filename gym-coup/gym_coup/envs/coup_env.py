@@ -117,7 +117,7 @@ class Game:
     def __init__(self, num_human_players=0, p_first_turn=0):
         '''
         num_human_players: Number of human players in the 2-player game
-        p_first_turn: Which player goes first, 0-indexed
+        p_first_turn:      Which player goes first, 0-indexed
         '''
         self.players = [Player(i, True) for i in range(num_human_players)]
         self.players += [Player(i+num_human_players, False) for i in range(2-num_human_players)]
@@ -672,7 +672,7 @@ class CoupEnv(gym.Env):
     def __init__(self, num_human_players=0, p_first_turn=0):
         '''
         num_human_players: Number of human players in the 2-player game
-        p_first_turn: Which player goes first, 0-indexed
+        p_first_turn:      Which player goes first, 0-indexed
         '''
         self.num_human_players = num_human_players
         self.p_first_turn = p_first_turn

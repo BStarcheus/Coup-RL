@@ -7,8 +7,8 @@ logger = logging.getLogger('coup_rl')
 class Agent:
     def __init__(self, id, env, qtable):
         '''
-        id: Agent id (1 or 2)
-        env: gym-coup env
+        id:     Agent id (1 or 2)
+        env:    gym-coup env
         qtable: QTable object with table, learning params
         '''
         self.id = id

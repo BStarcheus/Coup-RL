@@ -24,10 +24,10 @@ class QTable:
         All: creates a new empty QTable
         None: Load an existing QTable later using load()
 
-        shape: Tuple of ints for dimensions of table
-        learning_rate: Float (0, 1]
+        shape:           Tuple of ints for dimensions of table
+        learning_rate:   Float (0, 1]
         discount_factor: Float [0, 1]
-        epsilon: Float [0, 1]
+        epsilon:         Float [0, 1]
         '''
         self.table = None
         self.learning_rate = learning_rate
@@ -61,7 +61,7 @@ class QTable:
         Set a value for the given index of the QTable
 
         ind_tpl: Tuple, a multidimensioal index of the table for a single cell
-        val: Float value to set the table cell to
+        val:     Float value to set the table cell to
         '''
         if not isinstance(ind_tpl, tuple):
             raise TypeError('QTable must be indexed with tuple')
