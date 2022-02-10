@@ -41,7 +41,7 @@ class Agent:
                 is_p2 = self.id == 2
                 state = list(self.env.get_obs(p2_view=is_p2))[:6]
                 possible_state_actions = [tuple(state + [a]) for a in valid_actions]
-                state_action = self.qtable.argmax(possible_state_actions)
+                state_action = self.qtable.get_max_ind(possible_state_actions)
                 action = state_action[-1]
 
             elif len(valid_actions) == 1:
@@ -51,38 +51,45 @@ class Agent:
             else:
                 # Actions not found in QTable
                 # Need to look at possible next states
-                ...
+                # TODO temp
+                action = random.choice(valid_actions)
 
         # In Coup, turn sub-states and sub-actions are not stored in the QTable
         # so we can only update Q values when we are at the beginning of a turn.
         # Also, we view the opponent as the environment.
         if 0 in valid_actions:
             # Beginning of turn
-            # Update Q Table
 
-            # Get Q value for previous state-action
-            q_old = self.qtable.get(self.prev_state_action)
+            is_p2 = self.id == 2
+            state = list(self.env.get_obs(p2_view=is_p2))[:6]
 
-            # Get Q value for best action from new state
-            try:
-                q_max = self.qtable.get(state_action)
-            except NameError:
-                # state_action doesn't exist. Random choice was selected above.
-                is_p2 = self.id == 2
-                state = list(self.env.get_obs(p2_view=is_p2))[:6]
-                possible_state_actions = [tuple(state + [a]) for a in valid_actions]
-                state_action = self.qtable.argmax(possible_state_actions)
-                q_max = self.qtable.get(state_action)
+            if self.prev_state_action is not None:
+                # Not the first turn of the game
 
-            # Q Learning algorithm
-            q_new = q_old + self.learning_rate * (self.reward + self.discount_factor * q_max - q_old)
-            self.qtable.set(self.prev_state_action, q_new)
+                # Update Q Table
 
-            self.prev_state_action = state_action
+                # Get Q value for previous state-action
+                q_old = self.qtable.get(self.prev_state_action)
+
+                # Get Q value for best action from new state
+                try:
+                    q_max = self.qtable.get(state_action)
+                except NameError:
+                    # state_action doesn't exist. Random choice was selected above.
+                    possible_state_actions = [tuple(state + [a]) for a in valid_actions]
+                    state_action = self.qtable.get_max_ind(possible_state_actions)
+                    q_max = self.qtable.get(state_action)
+
+                # Q Learning algorithm
+                q_new = q_old + self.learning_rate * (self.reward + self.discount_factor * q_max - q_old)
+                self.qtable.set(self.prev_state_action, q_new)
+
+            self.prev_state_action = tuple(state + [action])
             self.reward = 0
-
 
         # Take action
         logger.debug(f'P{self.id}: {self.env.actions[action]}')
         obs, reward, done, info = self.env.step(action)
         self.reward += reward
+
+        return obs, reward, done, info

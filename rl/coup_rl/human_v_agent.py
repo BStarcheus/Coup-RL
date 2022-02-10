@@ -4,6 +4,7 @@ import re
 import gym
 import gym_coup
 from coup_rl.qtable import QTable
+from coup_rl.agent import Agent
 
 logging.basicConfig()
 logger = logging.getLogger('coup_rl')
@@ -38,13 +39,15 @@ class Human_v_Agent:
             logger.setLevel(log_level)
             # and the gym env
             logging.getLogger('gym_coup').setLevel(log_level)
+
+        self.env.render()
         
         if (learning_rate is not None and
             discount_factor is not None and
             epsilon is not None):
             # Create new Q Table
-            s_shape = list(self.env.observation_space.shape)
-            a_shape = list(self.env.action_space.shape)
+            s_shape = [x+1 for x in self.env.observation_space.high]
+            a_shape = [self.env.action_space.n + 1]
             shape = tuple(s_shape[:6] + a_shape)
             self.qtable = QTable(shape, learning_rate, discount_factor, epsilon)
         else:
@@ -66,17 +69,18 @@ class Human_v_Agent:
         '''
         logger.debug(f'you: {action}')
         obs, reward, done, info = self.env.step(action)
+        self.env.render()
 
         while not done and self.env.game.whose_action != 0:
             obs2, reward2, done, info2 = self.agent.step()
+            self.env.render()
 
         if done:
             self.finish_game()
 
     def finish_game(self):
         if self.is_training:
-            # Save Q Table to file
-
+            logger.debug('Saving QTable to file')
             # All saved agent files must end with _000000.npz
             # with number of episodes it's trained on
             fp_split = self.filepath.split('/')

@@ -704,23 +704,44 @@ class CoupEnv(gym.Env):
         else:
             raise RuntimeError(f'Cannot step with action type {type(action)}')
 
-        # Is it P2's turn?
-        is_p2 = self.game.whose_action == 1
+        # Who takes this action
+        whose_a = self.game.whose_action
+
+        # Num face up cards of each player before the action
+        num_cards_1 = [len([1 for c in p.cards if c.is_face_up]) for p in self.game.players]
 
         getattr(self.game, action)()
 
         # Get the observation from the perspective of
         # the player who just took the action
-        obs = self.get_obs(is_p2)
+        obs = self.get_obs(whose_a == 1)
         logger.debug(f'Observation: {obs}')
 
-        # TODO return reward, info
-        reward = 0
+        # Num face up cards of each player after the action
+        num_cards_2 = [len([1 for c in p.cards if c.is_face_up]) for p in self.game.players]
+
+        for i in range(len(num_cards_2)):
+            # Num cards they lost this turn
+            dif = num_cards_2[i] - num_cards_1[i]
+            if dif:
+                # -1 if you lose a card
+                self.reward[i] += -1 * dif
+                # +1 if your opp loses a card
+                self.reward[1-i] += 1 * dif
+
+        # The player who just went will receive their reward now
+        # Reset the reward to 0
+        reward = self.reward[whose_a]
+        self.reward[whose_a] = 0
+        # Leave the opp reward alone, since it hasn't been given to them yet
+        logger.debug(f'Reward: {reward}')
 
         return (obs, reward, self.game.game_over, dict())
 
     def reset(self):
         self.game = Game(self.num_human_players, self.p_first_turn)
+        # Track reward between actions, since step() is called by one player at a time
+        self.reward = [0 for _ in self.game.players]
 
     def render(self, mode='human'):
         if self.game is not None:

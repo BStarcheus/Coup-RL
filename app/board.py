@@ -49,8 +49,6 @@ class Board(QWidget):
         self.refresh()
 
     def refresh(self):
-        self.game.render()
-
         valid = []
 
         if self.game.game_over:
