@@ -43,15 +43,18 @@ class QTable:
         Load QTable and parameters from a file
         '''
         with np.load(filename) as data:
-            self.table = data.qtable
-            self.learning_rate = data.params[0]
-            self.discount_factor = data.params[1]
-            self.epsilon = data.params[2]
+            self.table = data.get('qtable')
+            params = data.get('params')
+            self.learning_rate = params[0]
+            self.discount_factor = params[1]
+            self.epsilon = params[2]
+            logger.debug(f'Loaded QTable, LR {self.learning_rate}, DF {self.discount_factor}, Eps {self.epsilon}')
 
     def save(self, filename):
         '''
         Save QTable and parameters to a file
         '''
+        logger.debug(f'Saving QTable to {filename}')
         np.savez_compressed(filename,
                             qtable=self.table,
                             params=[self.learning_rate, self.discount_factor, self.epsilon])

@@ -2,7 +2,7 @@ from components import *
 from coup_rl import Human_v_Agent
 
 class Board(QWidget):
-    def __init__(self, p_first_turn):
+    def __init__(self):
         '''
         p_first_turn: Which player goes first, 0-indexed
         '''
@@ -35,14 +35,30 @@ class Board(QWidget):
         self.confirm_btn.hide()
 
         self.setLayout(self.layout)
-        self.game_setup(p_first_turn)
 
-    def game_setup(self, p_first_turn):
+    def game_setup(self,
+                   p_first_turn,
+                   filepath,
+                   is_training,
+                   learning_rate=None,
+                   discount_factor=None,
+                   epsilon=None):
         '''
-        p_first_turn: Which player goes first, 0-indexed
+        p_first_turn:    Which player goes first, 0-indexed
+        filepath:        Path for file ending in .npz
+        is_training:     True if creating new save file after game
+        learning_rate:   Used for creating new QTable. Float (0, 1]
+        discount_factor: Used for creating new QTable. Float [0, 1]
+        epsilon:         Used for creating new QTable. Float [0, 1]
         '''
         # agent and game env with RL algo
-        self._game = Human_v_Agent(p_first_turn, log_level=logger.level)
+        self._game = Human_v_Agent(p_first_turn,
+                                   filepath,
+                                   is_training,
+                                   learning_rate,
+                                   discount_factor,
+                                   epsilon,
+                                   log_level=logger.level)
         # gym env with game logic
         self.game = self._game.env.game
 

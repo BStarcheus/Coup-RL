@@ -24,7 +24,7 @@ class Human_v_Agent:
         is_training:     True if creating new save file after game
         learning_rate:   Used for creating new QTable. Float (0, 1]
         discount_factor: Used for creating new QTable. Float [0, 1]
-        epsilon:         Used for creating new QTable. Float [0, 1] 
+        epsilon:         Used for creating new QTable. Float [0, 1]
         log_level:       coup_rl log level
         '''
         self.filepath = filepath
@@ -80,7 +80,6 @@ class Human_v_Agent:
 
     def finish_game(self):
         if self.is_training:
-            logger.debug('Saving QTable to file')
             # All saved agent files must end with _000000.npz
             # with number of episodes it's trained on
             fp_split = self.filepath.split('/')

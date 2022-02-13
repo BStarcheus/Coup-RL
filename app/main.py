@@ -12,15 +12,20 @@ class Coup(QMainWindow):
 
     def start_game(self):
         # Init from menu form
-        agent_filename, is_training, user_first = self.menu_widget.get_form_data()
+        form_data = self.menu_widget.get_form_data()
 
-        self.board_widget = Board(int(not user_first))
+        self.board_widget = Board()
+        self.board_widget.game_setup(int(form_data[0]),
+                                     form_data[1],
+                                     form_data[2],
+                                     form_data[3],
+                                     form_data[4],
+                                     form_data[5])
         self.board_widget.top_menu.quit_btn.clicked.connect(self.quit_game)
 
-        # TODO init rl agent
-        if not user_first:
+        if form_data[0]:
             # Agent has the first turn
-            self.board_widget._game.agent_step()
+            self.board_widget._game.agent.step()
             self.board_widget.actions.disable_all()
             self.board_widget.refresh()
 
