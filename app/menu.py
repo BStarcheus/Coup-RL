@@ -118,6 +118,7 @@ class Menu(QWidget):
         self.agent_file(dialog)
 
     def agent_file(self, dialog):
+        dialog.setNameFilter('*.npz')
         if dialog.exec():
             self.file_name.setText(dialog.selectedFiles()[0])
             self.start_btn.setEnabled(True)

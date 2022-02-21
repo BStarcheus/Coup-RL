@@ -47,7 +47,7 @@ class Human_v_Agent:
             epsilon is not None):
             # Create new Q Table
             s_shape = [x+1 for x in self.env.observation_space.high]
-            a_shape = [self.env.action_space.n + 1]
+            a_shape = [self.env.action_space.n]
             shape = tuple(s_shape[:6] + a_shape)
             self.qtable = QTable(shape, learning_rate, discount_factor, epsilon)
         else:

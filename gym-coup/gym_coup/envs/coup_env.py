@@ -758,7 +758,7 @@ class CoupEnv(gym.Env):
         # Note: some observations will never occur in game
         #       ex: All 4 cards are the same. Both players have all cards face up.
         low  = np.zeros(9, dtype='uint8')
-        high = np.array([14, 14, 3,  3,  12, 12, len(self.actions), len(self.actions), 1], dtype='uint8')
+        high = np.array([14, 14, 3,  3,  12, 12, len(self.actions)-1, len(self.actions)-1, 1], dtype='uint8')
         self.observation_space = gym.spaces.Box(low, high, dtype='uint8')
 
     def step(self, action):
