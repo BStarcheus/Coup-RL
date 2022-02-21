@@ -76,7 +76,6 @@ class Board(QWidget):
 
         elif self.game.whose_action == 0:
             valid = self._game.env.get_valid_actions(text=True)
-            valid = [x.replace('_', ' ').capitalize().strip() for x in valid]
             self.actions.enable(valid)
 
         for i in range(len(self.players)):
@@ -89,6 +88,8 @@ class Board(QWidget):
             # Refresh last move
             if p_env.last_action is not None:
                 a = self._game.env.actions[p_env.last_action].replace('_', ' ').capitalize().strip()
+                if a[:4] in ['Pass', 'Bloc', 'Chal']:
+                    a = a.split()[0]
                 p.set_move(a)
 
             # Replace all cards
@@ -107,7 +108,7 @@ class Board(QWidget):
             # If necessary, allow P1 cards to be selected
             if self.game.whose_action == 0 and i == 0:
                 text = ''
-                if 'Lose card 1' in valid or 'Lose card 2' in valid:
+                if 'lose_card_1' in valid or 'lose_card_2' in valid:
                     # Player will select which card to lose
                     p.num_selectable = 1
 
@@ -117,7 +118,7 @@ class Board(QWidget):
                     else:
                         # Player's only option is losing a card
                         text = 'Choose a card to be eliminated and press Confirm.'
-                elif 'Exchange return 34' in valid:
+                elif 'exchange_return_34' in valid:
                     p.num_selectable = 2
                     text = 'Choose 2 cards to return to the deck and press Confirm.'
                 else:
@@ -139,10 +140,7 @@ class Board(QWidget):
         self.actions.disable_all()
 
         sender = self.sender()
-        action = sender.text().lower().replace(' ', '_')
-        if action == 'pass':
-            action += '_'
-
+        action = sender.coup_action_name
         self._game.step(action)
         self.refresh()
 

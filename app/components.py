@@ -236,10 +236,25 @@ class ActionSelector(QWidget):
         for btn in self.findChildren(ActionButton):
             btn.disable()
     
-    def enable(self, lst):
+    def enable(self, action_names):
+        '''
+        action_names: Actions in the form of gym-coup function names (lowercase underscored)
+        '''
+        button_names = [x.replace('_', ' ').capitalize().strip() for x in action_names]
+        for i in range(len(button_names)):
+            if button_names[i][:4] in ['Pass', 'Bloc', 'Chal']:
+                button_names[i] = button_names[i].split()[0]
+
         for btn in self.findChildren(ActionButton):
-            if btn.text() in lst:
-                btn.enable()
+            try:
+                ind = button_names.index(btn.text())
+            except ValueError:
+                continue
+
+            btn.enable()
+            # For Pass/Block/Challenge, store which type it is,
+            # but don't display the longer name on the button
+            btn.coup_action_name = action_names[ind]
 
 
 class ActionButton(QPushButton):
