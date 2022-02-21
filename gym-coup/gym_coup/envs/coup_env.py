@@ -14,24 +14,38 @@ CONTESSA   = 3
 DUKE       = 4
 
 # Actions
-INCOME             = 0
-FOREIGN_AID        = 1
-COUP               = 2
-TAX                = 3
-ASSASSINATE        = 4
-EXCHANGE           = 5
-STEAL              = 6
-EXCHANGE_RETURN_12 = 7
-EXCHANGE_RETURN_13 = 8
-EXCHANGE_RETURN_14 = 9
-EXCHANGE_RETURN_23 = 10
-EXCHANGE_RETURN_24 = 11
-EXCHANGE_RETURN_34 = 12
-PASS_              = 13
-BLOCK              = 14
-CHALLENGE          = 15
-LOSE_CARD_1        = 16
-LOSE_CARD_2        = 17
+INCOME                      = 0
+FOREIGN_AID                 = 1
+COUP                        = 2
+TAX                         = 3
+ASSASSINATE                 = 4
+EXCHANGE                    = 5
+STEAL                       = 6
+LOSE_CARD_1                 = 7
+LOSE_CARD_2                 = 8
+PASS_FA                     = 9
+PASS_FA_BLOCK               = 10
+PASS_TAX                    = 11
+PASS_EXCHANGE               = 12
+PASS_ASSASSINATE_BLOCK      = 13
+PASS_STEAL                  = 14
+PASS_STEAL_BLOCK            = 15
+BLOCK_FA                    = 16
+BLOCK_ASSASSINATE           = 17
+BLOCK_STEAL                 = 18
+CHALLENGE_FA_BLOCK          = 19
+CHALLENGE_TAX               = 20
+CHALLENGE_EXCHANGE          = 21
+CHALLENGE_ASSASSINATE       = 22
+CHALLENGE_ASSASSINATE_BLOCK = 23
+CHALLENGE_STEAL             = 24
+CHALLENGE_STEAL_BLOCK       = 25
+EXCHANGE_RETURN_12          = 26
+EXCHANGE_RETURN_13          = 27
+EXCHANGE_RETURN_14          = 28
+EXCHANGE_RETURN_23          = 29
+EXCHANGE_RETURN_24          = 30
+EXCHANGE_RETURN_34          = 31
 
 class Card:
     names = ['Assassin',
@@ -92,7 +106,7 @@ class Player:
         '''
         c1 = self.cards[0]
         c2 = self.cards[1]
-        la = self.last_action if self.last_action is not None else PASS_
+        la = self.last_action if self.last_action is not None else PASS_FA
         return (c1.val,
                 c2.val,
                 c1.is_face_up,
@@ -273,16 +287,18 @@ class Game:
             # choose to block or challenge for certain actions
 
             if opp_player.last_action == FOREIGN_AID:
-                return [PASS_, BLOCK]
-            elif opp_player.last_action in [TAX, EXCHANGE]:
-                return [PASS_, CHALLENGE]
+                return [PASS_FA, BLOCK_FA]
+            elif opp_player.last_action == TAX:
+                return [PASS_TAX, CHALLENGE_TAX]
+            elif opp_player.last_action == EXCHANGE:
+                return [PASS_EXCHANGE, CHALLENGE_EXCHANGE]
             elif opp_player.last_action == STEAL:
-                return [PASS_, BLOCK, CHALLENGE]
+                return [PASS_STEAL, BLOCK_STEAL, CHALLENGE_STEAL]
             elif opp_player.last_action in [ASSASSINATE, COUP]:
                 valid = valid_lose_card_options()
 
                 if opp_player.last_action == ASSASSINATE:
-                    valid += [BLOCK, CHALLENGE]
+                    valid += [BLOCK_ASSASSINATE, CHALLENGE_ASSASSINATE]
 
                 return valid
             else:
@@ -305,9 +321,15 @@ class Game:
 
             return valid
 
-        elif opp_player.last_action == BLOCK:
+        elif opp_player.last_action == BLOCK_FA:
             # It is curr_player's turn and opp_player wants to block their move
-            return [PASS_, CHALLENGE]
+            return [PASS_FA_BLOCK, CHALLENGE_FA_BLOCK]
+        elif opp_player.last_action == BLOCK_ASSASSINATE:
+            # It is curr_player's turn and opp_player wants to block their move
+            return [PASS_ASSASSINATE_BLOCK, CHALLENGE_ASSASSINATE_BLOCK]
+        elif opp_player.last_action == BLOCK_STEAL:
+            # It is curr_player's turn and opp_player wants to block their move
+            return [PASS_STEAL_BLOCK, CHALLENGE_STEAL_BLOCK]
         
         else:
             raise RuntimeError('Invalid action progression')
@@ -422,182 +444,212 @@ class Game:
             curr_player.add_coins(num_steal)
             self.next_player_turn()
 
-    def pass_(self):
+    def _pass(self):
+        # Complete the opponent's action
         act = self.get_opp_player().last_action
+        self.next_player_action()
+        getattr(self, CoupEnv.actions[act])()
 
-        if act in [FOREIGN_AID, TAX, EXCHANGE, STEAL]:
-            self.get_curr_action_player().last_action = PASS_
-            self.next_player_action()
-            # Complete the action
-            getattr(self, CoupEnv.actions[act])()
+    def _pass_block(self):
+        # Block succeeds, so nothing to do. Next turn.
+        self.next_player_turn()
 
-        elif act == BLOCK:
-            # Block succeeds, so nothing to do. Next turn.
-            self.get_curr_action_player().last_action = PASS_
-            self.next_player_turn()
+    def pass_fa(self):
+        self.get_curr_action_player().last_action = PASS_FA
+        self._pass()
 
-        else:
-            raise RuntimeError(f'Cannot pass after {CoupEnv.actions[act]}')
+    def pass_fa_block(self):
+        self.get_curr_action_player().last_action = PASS_FA_BLOCK
+        self._pass_block()
 
-    def block(self):
-        act = self.get_opp_player().last_action
+    def pass_tax(self):
+        self.get_curr_action_player().last_action = PASS_TAX
+        self._pass()
 
-        if act in [FOREIGN_AID, ASSASSINATE, STEAL]:
-            self.get_curr_action_player().last_action = BLOCK
-            self.next_player_action()
-        else:
-            raise RuntimeError(f'Cannot pass after {CoupEnv.actions[act]}')
+    def pass_exchange(self):
+        self.get_curr_action_player().last_action = PASS_EXCHANGE
+        self._pass()
 
-    def challenge(self):
+    def pass_assassinate_block(self):
+        self.get_curr_action_player().last_action = PASS_ASSASSINATE_BLOCK
+        self._pass_block()
+
+    def pass_steal(self):
+        self.get_curr_action_player().last_action = PASS_STEAL
+        self._pass()
+
+    def pass_steal_block(self):
+        self.get_curr_action_player().last_action = PASS_STEAL_BLOCK
+        self._pass_block()
+
+    def block_fa(self):
+        self.get_curr_action_player().last_action = BLOCK_FA
+        self.next_player_action()
+
+    def block_assassinate(self):
+        self.get_curr_action_player().last_action = BLOCK_ASSASSINATE
+        self.next_player_action()
+
+    def block_steal(self):
+        self.get_curr_action_player().last_action = BLOCK_STEAL
+        self.next_player_action()
+
+    # Challenge:
+    # Check if opp_player has the required card
+    # If they do, curr_player loses a card
+    # If they don't, opp_player loses a card
+
+    def challenge_fa_block(self):
         curr_player = self.get_curr_action_player()
         opp_player = self.get_opp_player()
-        # Check if opp_player has the required card
-        # If they do, curr_player loses a card
-        # If they don't, opp_player loses a card
+        curr_player.last_action = CHALLENGE_FA_BLOCK
 
-        act = self.get_opp_player().last_action
-
-        if act == TAX:
-            curr_player.last_action = CHALLENGE
-
-            if opp_player.has_face_down_card(DUKE):
-                curr_player.lost_challenge = True
-                # Replace the revealed card
-                self._challenge_fail_replace_card(DUKE)
-                
-                # Complete the action
-                opp_player.add_coins(3)
-                
-                # curr_player must lose a card
-                # It is still their action
-            else:
-                opp_player.lost_challenge = True
-                # opp_player must lose a card
-                self.next_player_action()
-
-        elif act == ASSASSINATE:
-            curr_player.last_action = CHALLENGE
-
-            if opp_player.has_face_down_card(ASSASSIN):
-                # curr_player loses the game
-                # Lose 1 card for assassination
-                # and 1 card for losing challenge
-                curr_player.cards[0].is_face_up = True
-                curr_player.cards[1].is_face_up = True
-                self.game_over = True
-                logger.info('Game Over')
-            else:
-                opp_player.lost_challenge = True
-                
-                # Coins spent are returned in this one case
-                opp_player.add_coins(3)
-                
-                # opp_player must lose a card
-                self.next_player_action()
-
-        elif act == EXCHANGE:
-            curr_player.last_action = CHALLENGE
-
-            if opp_player.has_face_down_card(AMBASSADOR):
-                curr_player.lost_challenge = True
-                # Replace the revealed card
-                self._challenge_fail_replace_card(AMBASSADOR)
-
-                # Complete the action
-                self.next_player_action()
-                self.exchange()
-
-                # curr_player must lose a card
-                # After _exchange_return is called it will switch to their action
-            else:
-                opp_player.lost_challenge = True
-                # opp_player must lose a card
-                self.next_player_action()
-
-        elif act == STEAL:
-            curr_player.last_action = CHALLENGE
-
-            if opp_player.has_face_down_card(CAPTAIN):
-                curr_player.lost_challenge = True
-                # Replace the revealed card
-                self._challenge_fail_replace_card(CAPTAIN)
-
-                # Complete the action
-                num_steal = 2 if curr_player.coins >= 2 else 1
-                curr_player.remove_coins(num_steal)
-                opp_player.add_coins(num_steal)
-                # curr_player must lose a card
-                # It is still their action
-            else:
-                opp_player.lost_challenge = True
-                # opp_player must lose a card
-                self.next_player_action()
-
-        elif act == BLOCK:
-            prev_act = curr_player.last_action
-            curr_player.last_action = CHALLENGE
-
-            if prev_act == FOREIGN_AID:
-                if opp_player.has_face_down_card(DUKE):
-                    curr_player.lost_challenge = True
-                    # Replace the revealed card
-                    self._challenge_fail_replace_card(DUKE)
-                    # curr_player must lose a card
-                    # It is still their action
-                else:
-                    opp_player.lost_challenge = True
-                    
-                    # Block failed, so complete the action
-                    curr_player.add_coins(2)
-                    
-                    # opp_player must lose a card
-                    self.next_player_action()
-
-            elif prev_act == ASSASSINATE:
-                if opp_player.has_face_down_card(CONTESSA):
-                    curr_player.lost_challenge = True
-                    # Replace the revealed card
-                    self._challenge_fail_replace_card(CONTESSA)
-                    # curr_player must lose a card
-                    # It is still their action
-                else:
-                    # opp_player loses the game
-                    # Lose 1 card for assassination
-                    # and 1 card for losing challenge
-                    opp_player.cards[0].is_face_up = True
-                    opp_player.cards[1].is_face_up = True
-                    self.game_over = True
-                    logger.info('Game Over')
-
-            elif prev_act == STEAL:
-                if opp_player.has_face_down_card(CAPTAIN):
-                    curr_player.lost_challenge = True
-                    # Replace the revealed card
-                    self._challenge_fail_replace_card(CAPTAIN)
-                    # curr_player must lose a card
-                    # It is still their action
-                elif opp_player.has_face_down_card(AMBASSADOR):
-                    curr_player.lost_challenge = True
-                    # Replace the revealed card
-                    self._challenge_fail_replace_card(AMBASSADOR)
-                    # curr_player must lose a card
-                    # It is still their action
-                else:
-                    opp_player.lost_challenge = True
-
-                    # Block failed, so complete the action
-                    num_steal = 2 if opp_player.coins >= 2 else 1
-                    opp_player.remove_coins(num_steal)
-                    curr_player.add_coins(num_steal)
-
-                    # opp_player must lose a card
-                    self.next_player_action()
-
-            else:
-                raise RuntimeError(f'Cannot block {CoupEnv.actions[prev_act]}')
-
+        if opp_player.has_face_down_card(DUKE):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(DUKE)
+            # curr_player must lose a card
+            # It is still their action
         else:
-            raise RuntimeError(f'Cannot challenge {CoupEnv.actions[act]}')
+            opp_player.lost_challenge = True
+
+            # Block failed, so complete the action
+            curr_player.add_coins(2)
+
+            # opp_player must lose a card
+            self.next_player_action()
+
+    def challenge_tax(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_TAX
+
+        if opp_player.has_face_down_card(DUKE):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(DUKE)
+
+            # Complete the action
+            opp_player.add_coins(3)
+
+            # curr_player must lose a card
+            # It is still their action
+        else:
+            opp_player.lost_challenge = True
+            # opp_player must lose a card
+            self.next_player_action()
+
+    def challenge_exchange(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_EXCHANGE
+
+        if opp_player.has_face_down_card(AMBASSADOR):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(AMBASSADOR)
+
+            # Complete the action
+            self.next_player_action()
+            self.exchange()
+
+            # curr_player must lose a card
+            # After _exchange_return is called it will switch to their action
+        else:
+            opp_player.lost_challenge = True
+            # opp_player must lose a card
+            self.next_player_action()
+
+    def challenge_assassinate(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_ASSASSINATE
+
+        if opp_player.has_face_down_card(ASSASSIN):
+            # curr_player loses the game
+            # Lose 1 card for assassination
+            # and 1 card for losing challenge
+            curr_player.cards[0].is_face_up = True
+            curr_player.cards[1].is_face_up = True
+            self.game_over = True
+            logger.info('Game Over')
+        else:
+            opp_player.lost_challenge = True
+
+            # Coins spent are returned in this one case
+            opp_player.add_coins(3)
+
+            # opp_player must lose a card
+            self.next_player_action()
+
+    def challenge_assassinate_block(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_ASSASSINATE_BLOCK
+
+        if opp_player.has_face_down_card(CONTESSA):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(CONTESSA)
+            # curr_player must lose a card
+            # It is still their action
+        else:
+            # opp_player loses the game
+            # Lose 1 card for assassination
+            # and 1 card for losing challenge
+            opp_player.cards[0].is_face_up = True
+            opp_player.cards[1].is_face_up = True
+            self.game_over = True
+            logger.info('Game Over')
+
+    def challenge_steal(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_STEAL
+
+        if opp_player.has_face_down_card(CAPTAIN):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(CAPTAIN)
+
+            # Complete the action
+            num_steal = 2 if curr_player.coins >= 2 else 1
+            curr_player.remove_coins(num_steal)
+            opp_player.add_coins(num_steal)
+            # curr_player must lose a card
+            # It is still their action
+        else:
+            opp_player.lost_challenge = True
+            # opp_player must lose a card
+            self.next_player_action()
+
+    def challenge_steal_block(self):
+        curr_player = self.get_curr_action_player()
+        opp_player = self.get_opp_player()
+        curr_player.last_action = CHALLENGE_STEAL_BLOCK
+
+        if opp_player.has_face_down_card(CAPTAIN):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(CAPTAIN)
+            # curr_player must lose a card
+            # It is still their action
+        elif opp_player.has_face_down_card(AMBASSADOR):
+            curr_player.lost_challenge = True
+            # Replace the revealed card
+            self._challenge_fail_replace_card(AMBASSADOR)
+            # curr_player must lose a card
+            # It is still their action
+        else:
+            opp_player.lost_challenge = True
+
+            # Block failed, so complete the action
+            num_steal = 2 if opp_player.coins >= 2 else 1
+            opp_player.remove_coins(num_steal)
+            curr_player.add_coins(num_steal)
+
+            # opp_player must lose a card
+            self.next_player_action()
 
     def _challenge_fail_replace_card(self, card_val):
         # If the challenged player actually had the correct card,
@@ -611,7 +663,7 @@ class Game:
                 p.cards[i] = self.draw_card()
                 p._sort_cards()
                 return
-        
+
         raise RuntimeError(f'Tried to replace card {Card.names[card_val]} that was not in player\'s hand')
 
     def _lose_card(self, card_ind):
@@ -655,18 +707,31 @@ class CoupEnv(gym.Env):
         4:  'assassinate',
         5:  'exchange', # pick up 2 cards from court deck
         6:  'steal',
-        7:  'exchange_return_12', # return cards 1,2 to court deck
-        8:  'exchange_return_13', # return cards 1,3
-        9:  'exchange_return_14', # return cards 1,4
-        10: 'exchange_return_23', # return cards 2,3
-        11: 'exchange_return_24', # return cards 2,4
-        12: 'exchange_return_34', # return cards 3,4
-        13: 'pass_',       # only an option when asked whether you'd
-                           # like to block or challenge your opponent's last move
-        14: 'block',       # block the opponent's move
-        15: 'challenge',   # challenge the opponent's move
-        16: 'lose_card_1', # choose which card to lose
-        17: 'lose_card_2'
+        7:  'lose_card_1', # choose which card to lose
+        8:  'lose_card_2',
+        9:  'pass_fa',
+        10: 'pass_fa_block',
+        11: 'pass_tax',
+        12: 'pass_exchange',
+        13: 'pass_assassinate_block',
+        14: 'pass_steal',
+        15: 'pass_steal_block',
+        16: 'block_fa',
+        17: 'block_assassinate',
+        18: 'block_steal',
+        19: 'challenge_fa_block',
+        20: 'challenge_tax',
+        21: 'challenge_exchange',
+        22: 'challenge_assassinate',
+        23: 'challenge_assassinate_block',
+        24: 'challenge_steal',
+        25: 'challenge_steal_block',
+        26: 'exchange_return_12', # return cards 1,2 to court deck
+        27: 'exchange_return_13', # return cards 1,3
+        28: 'exchange_return_14', # return cards 1,4
+        29: 'exchange_return_23', # return cards 2,3
+        30: 'exchange_return_24', # return cards 2,4
+        31: 'exchange_return_34'  # return cards 3,4
     }
 
     def __init__(self, num_human_players=0, p_first_turn=0):
@@ -720,6 +785,7 @@ class CoupEnv(gym.Env):
         # Num face up cards of each player after the action
         num_cards_2 = [len([1 for c in p.cards if c.is_face_up]) for p in self.game.players]
 
+        # TODO fix reward handling
         for i in range(len(num_cards_2)):
             # Num cards they lost this turn
             dif = num_cards_2[i] - num_cards_1[i]
