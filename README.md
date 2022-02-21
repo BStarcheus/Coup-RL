@@ -1,5 +1,8 @@
-![Coup RL Dark Logo](./img/Coup-RL-logo-dark.png#gh-light-mode-only)
-![Coup RL Light Logo](./img/Coup-RL-logo-light.png#gh-dark-mode-only)
+<p align="center">
+    <img src="./img/Coup-RL-logo-dark.png#gh-light-mode-only" width="200px"/>
+    <img src="./img/Coup-RL-logo-light.png#gh-dark-mode-only" width="200px"/>
+</p>
+
 # Coup RL
 
 Coup RL is a reinforcement learning agent that learns to play the deception-based board game Coup.
