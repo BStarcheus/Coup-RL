@@ -785,29 +785,20 @@ class CoupEnv(gym.Env):
         # Num face up cards of each player after the action
         num_cards_2 = [len([1 for c in p.cards if c.is_face_up]) for p in self.game.players]
 
-        # TODO fix reward handling
-        for i in range(len(num_cards_2)):
-            # Num cards they lost this turn
-            dif = num_cards_2[i] - num_cards_1[i]
-            if dif:
-                # -1 if you lose a card
-                self.reward[i] += -1 * dif
-                # +1 if your opp loses a card
-                self.reward[1-i] += 1 * dif
-
-        # The player who just went will receive their reward now
-        # Reset the reward to 0
-        reward = self.reward[whose_a]
-        self.reward[whose_a] = 0
-        # Leave the opp reward alone, since it hasn't been given to them yet
+        reward = 0
+        # Get number of cards lost this action by each player
+        dif_curr = num_cards_2[whose_a] - num_cards_1[whose_a]
+        dif_opp = num_cards_2[1-whose_a] - num_cards_1[1-whose_a]
+        # -1 if you lose a card
+        reward += -1 * dif_curr
+        # +1 if your opp loses a card
+        reward += 1 * dif_opp
         logger.debug(f'Reward: {reward}')
 
         return (obs, reward, self.game.game_over, dict())
 
     def reset(self):
         self.game = Game(self.num_human_players, self.p_first_turn)
-        # Track reward between actions, since step() is called by one player at a time
-        self.reward = [0 for _ in self.game.players]
 
     def render(self, mode='human'):
         if self.game is not None:

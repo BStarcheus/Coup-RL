@@ -69,6 +69,7 @@ class Human_v_Agent:
         '''
         logger.debug(f'you: {action}')
         obs, reward, done, info = self.env.step(action)
+        self.agent.reward -= reward # Make sure the agent gets feedback for what happened
         self.env.render()
 
         while not done and self.env.game.whose_action != 0:
