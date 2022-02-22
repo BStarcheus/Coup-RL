@@ -46,9 +46,7 @@ class Human_v_Agent:
             discount_factor is not None and
             epsilon is not None):
             # Create new Q Table
-            s_shape = [x+1 for x in self.env.observation_space.high]
-            a_shape = [self.env.action_space.n]
-            shape = tuple(s_shape[:6] + a_shape)
+            shape = (15, 15, 4, 4, 13, 13, self.env.action_space.n - 7)
             self.qtable = QTable(shape, learning_rate, discount_factor, epsilon)
         else:
             # Try to load existing Q Table
