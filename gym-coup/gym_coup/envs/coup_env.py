@@ -6,6 +6,8 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger('gym_coup')
 
+NONE = -1
+
 # Cards
 ASSASSIN   = 0
 AMBASSADOR = 1
@@ -70,7 +72,7 @@ class Player:
         self.is_human = is_human
         self.cards = []
         self.coins = 2
-        self.last_action = None
+        self.last_action = NONE
 
         # Indicate that the player has lost a challenge
         # and must choose which card to lose
@@ -86,31 +88,33 @@ class Player:
         self.coins -= num
 
     def has_face_down_card(self, card_val):
-        for i in range(2):
+        for i in range(len(self.cards)):
             c = self.cards[i]
             if c.val == card_val and not c.is_face_up:
                 return True
         return False
 
-    def get_obs(self):
+    def get_obs(self, text=False):
         '''
         Return the current state of the player
 
+        text: Whether to get in readable format
+
         Observation:
-            Card 1            (0 - 5)
-            Card 2            (0 - 5)
-            Is card 1 face up (0 - 1)
-            Is card 2 face up (0 - 1)
-            Coins             (0 - 12)
-            Last action
+            Cards list [(
+                Card            (0 - 4)
+                Is card face up (0 - 1)
+                )]
+            Coins               (0 - 12)
+            Last action         (-1 - 31)
         '''
-        c1 = self.cards[0]
-        c2 = self.cards[1]
-        la = self.last_action if self.last_action is not None else PASS_FA
-        return (c1.val,
-                c2.val,
-                c1.is_face_up,
-                c2.is_face_up,
+        if text:
+            c = [(self.cards[i].get_name(), int(self.cards[i].is_face_up)) for i in range(len(self.cards))]
+            la = CoupEnv.actions[self.last_action]
+        else:
+            c = [(self.cards[i].val, int(self.cards[i].is_face_up)) for i in range(len(self.cards))]
+            la = self.last_action
+        return (c,
                 self.coins,
                 la)
 
@@ -121,6 +125,17 @@ class Player:
         sorts we need by only sorting when cards are exchanged or lost.
         '''
         self.cards.sort()
+
+    def render(self):
+        text = f'P{self.id + 1}: '
+        for c in self.cards:
+            text += f'{c.get_name()} '
+        text += '| '
+        for c in self.cards:
+            text += f'{c.is_face_up} '
+        text += '| '
+        text += f'{self.coins} | {"_" if self.last_action == NONE else CoupEnv.actions[self.last_action]}'
+        logger.info(text)
 
 
 class Game:
@@ -158,26 +173,27 @@ class Game:
             # In a 2 player game, the player going first starts with 1 coin instead of 2
             self.players[p_first_turn].coins = 1
 
-    def get_obs(self, p2_view=False):
+    def get_obs(self, p2_view=False, text=False):
         '''
         Return the current state of the game
 
         p2_view: Whether to get the observation from P2's view/perspective
+        text:    Whether to get in readable format
 
         Observation:
-            P1 card 1            (0 - 5)
-            P1 card 2            (0 - 5)
-            P2 card 1            (0 - 5)
-            P2 card 2            (0 - 5)
-            P1 is card 1 face up (0 - 1)
-            P1 is card 2 face up (0 - 1)
-            P2 is card 1 face up (0 - 1)
-            P2 is card 2 face up (0 - 1)
+            P1 Cards list [(
+                Card            (0 - 4)
+                Is card face up (0 - 1)
+                )]
+            P2 Cards list [(
+                Card            (0 - 4)
+                Is card face up (0 - 1)
+                )]
             P1 # coins           (0 - 12)
             P2 # coins           (0 - 12)
-            P1 last action
-            P2 last action
-            Whose next action  (0, 1)
+            P1 last action       (-1 - 31)
+            P2 last action       (-1 - 31)
+            Whose next action    (0 - 1)
         '''
         if p2_view:
             p1_ind = 1
@@ -185,29 +201,18 @@ class Game:
         else:
             p1_ind = 0
             p2_ind = 1
-        p1 = self.players[p1_ind].get_obs()
-        p2 = self.players[p2_ind].get_obs()
-        return (p1[0], p1[1],
-                p2[0], p2[1],
-                p1[2], p1[3],
-                p2[2], p2[3],
-                p1[4],
-                p2[4],
-                p1[5],
-                p2[5],
+        p1 = self.players[p1_ind].get_obs(text=text)
+        p2 = self.players[p2_ind].get_obs(text=text)
+        return (p1[0], p2[0], # Cards
+                p1[1], p2[1], # Coins
+                p1[2], p2[2], # Last action
                 self.whose_action)
-
-    def print_player(self, p_ind):
-        p = self.players[p_ind]
-        logger.info(f'P{p_ind + 1}: {p.cards[0].get_name()} | {p.cards[0].is_face_up} | ' + 
-                                  f'{p.cards[1].get_name()} | {p.cards[1].is_face_up} | ' +
-            f'{p.coins} | {"_" if p.last_action == None else CoupEnv.actions[p.last_action]}')
 
     def render(self):
         logger.info(f'Turn {self.turn_count}')
-        logger.info('Player: Card1 | FaceUp | Card2 | FaceUp | Coins | LastAction')
-        self.print_player(0)
-        self.print_player(1)
+        logger.info('Player: Cards | IsCardFaceUp | Coins | LastAction')
+        for p in self.players:
+            p.render()
 
     def draw_card(self, index=0):
         return self.deck.pop(index)
@@ -655,7 +660,7 @@ class Game:
         # If the challenged player actually had the correct card,
         # shuffle it into the deck and give them a new card
         p = self.get_opp_player()
-        for i in range(2):
+        for i in range(len(p.cards)):
             c = p.cards[i]
             if c.val == card_val and not c.is_face_up:
                 self.deck.append(c)
@@ -700,6 +705,7 @@ class CoupEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     actions = {
+        -1: 'none',
         0:  'income',
         1:  'foreign_aid',
         2:  'coup',
@@ -746,20 +752,32 @@ class CoupEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(len(self.actions))
 
         # Observation:
-        #     P1 card config     (0 - 14) unique (alph sorted) hands for 1 player
-        #     P2 card config     (0 - 14)
-        #     P1 is card face up (0 - 3) each cmb of 2 cards face up and down
-        #     P2 is card face up (0 - 3)
-        #     P1 # coins         (0 - 12)
-        #     P2 # coins         (0 - 12)
-        #     P1 last action
-        #     P2 last action
-        #     Whose next action  (0, 1)
-        # Note: some observations will never occur in game
+        #     P1 card 1            (0 - 4)
+        #     P1 card 2            (0 - 4)
+        #     P1 card 3            (-1 - 4) # Can have 2 or 4 cards
+        #     P1 card 4            (-1 - 4)
+        #     P2 card 1            (0 - 4)
+        #     P2 card 2            (0 - 4)
+        #     P2 card 3            (-1 - 4) # Can have 2 or 4 cards
+        #     P2 card 4            (-1 - 4)
+        #     P1 is card 1 face up (0 - 1)
+        #     P1 is card 2 face up (0 - 1)
+        #     P1 is card 3 face up (-1 - 1)
+        #     P1 is card 4 face up (-1 - 1)
+        #     P2 is card 1 face up (0 - 1)
+        #     P2 is card 2 face up (0 - 1)
+        #     P2 is card 3 face up (-1 - 1)
+        #     P2 is card 4 face up (-1 - 1)
+        #     P1 # coins           (0 - 12)
+        #     P2 # coins           (0 - 12)
+        #     P1 last action       (-1 - 31)
+        #     P2 last action       (-1 - 31)
+        #     Whose next action    (0 - 1)
+        # Note: many observations will never occur in game
         #       ex: All 4 cards are the same. Both players have all cards face up.
-        low  = np.zeros(9, dtype='uint8')
-        high = np.array([14, 14, 3,  3,  12, 12, len(self.actions)-1, len(self.actions)-1, 1], dtype='uint8')
-        self.observation_space = gym.spaces.Box(low, high, dtype='uint8')
+        low  = np.array([0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0], dtype='int8')
+        high = np.array([4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 12, 12, 31, 31, 1], dtype='int8')
+        self.observation_space = gym.spaces.Box(low, high, dtype='int8')
 
     def step(self, action):
         if isinstance(action, int):
@@ -818,49 +836,54 @@ class CoupEnv(gym.Env):
         else:
             return a
 
-    def get_obs(self, p2_view=False):
+    def get_obs(self, p2_view=False, text=False):
         '''
         Return the current state of the environment
 
         p2_view: Whether to get the observation from P2's view/perspective
+        text:    Whether to get in readable format
 
         Observation:
-            P1 card config     (0 - 14) unique (alph sorted) hands for 1 player
-            P2 card config     (0 - 14)
-            P1 is card face up (0 - 3) each cmb of 2 cards face up and down
-            P2 is card face up (0 - 3)
-            P1 # coins         (0 - 12)
-            P2 # coins         (0 - 12)
-            P1 last action
-            P2 last action
-            Whose next action  (0, 1)
-        Note: some observations will never occur in game
+            P1 card 1            (0 - 4)
+            P1 card 2            (0 - 4)
+            P1 card 3            (-1 - 4) # Can have 2 or 4 cards
+            P1 card 4            (-1 - 4)
+            P2 card 1            (0 - 4)
+            P2 card 2            (0 - 4)
+            P2 card 3            (-1 - 4) # Can have 2 or 4 cards
+            P2 card 4            (-1 - 4)
+            P1 is card 1 face up (0 - 1)
+            P1 is card 2 face up (0 - 1)
+            P1 is card 3 face up (-1 - 1)
+            P1 is card 4 face up (-1 - 1)
+            P2 is card 1 face up (0 - 1)
+            P2 is card 2 face up (0 - 1)
+            P2 is card 3 face up (-1 - 1)
+            P2 is card 4 face up (-1 - 1)
+            P1 # coins           (0 - 12)
+            P2 # coins           (0 - 12)
+            P1 last action       (-1 - 31)
+            P2 last action       (-1 - 31)
+            Whose next action    (0 - 1)
+        Note: many observations will never occur in game
               ex: All 4 cards are the same. Both players have all cards face up.
         '''
-        obs = self.game.get_obs(p2_view)
-    
-        # Collapse the 2 elements for cards into a single element
-        # Card config has only 15 possibilities, not 5*5=25
-        # This reduces the overall state space
+        p1cards, p2cards, p1coins, p2coins, p1la, p2la, wa = self.game.get_obs(p2_view=p2_view, text=text)
 
-        # Go from 25 -> 15 indicies by removing where card1 > card2, since they are always sorted
-        # card1 * 5 + card2 - (card1 * (card1+1))/2
-        c1 = obs[0]
-        c2 = obs[1]
-        p1_cards = c1 * 5 + c2 - (c1 * (c1+1))//2 # // for int
-        c1 = obs[2]
-        c2 = obs[3]
-        p2_cards = c1 * 5 + c2 - (c1 * (c1+1))//2 # // for int
+        obs = []
 
-        p1_face_up = obs[4] * 2 + obs[5]
-        p2_face_up = obs[6] * 2 + obs[7]
+        # Add cards and is_face_up vals
+        for i in range(2):
+            for x in [p1cards, p2cards]:
+                obs += [c[i] for c in x]
+                if len(x) == 2:
+                    if text:
+                        obs += [self.actions[NONE]]*2
+                    else:
+                        obs += [NONE]*2
+                elif len(x) != 4:
+                    raise RuntimeError('Number of cards in hand must be 2 or 4')
 
-        return (p1_cards,
-                p2_cards,
-                p1_face_up,
-                p2_face_up,
-                obs[8],
-                obs[9],
-                obs[10],
-                obs[11],
-                obs[12])
+        obs += [p1coins, p2coins, p1la, p2la, wa]
+        obs = tuple(obs)
+        return obs

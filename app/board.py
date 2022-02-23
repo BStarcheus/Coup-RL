@@ -60,34 +60,37 @@ class Board(QWidget):
                                    epsilon,
                                    log_level=logger.level)
         # gym env with game logic
-        self.game = self._game.env.game
+        self.env = self._game.env
 
         self.refresh()
 
     def refresh(self):
         valid = []
+        obs = self.env.get_obs(text=True)
 
-        if self.game.game_over:
+        if self.env.game.game_over:
             self.actions.close()
             self.disable_card_select()
             # Check who won the game
-            user_won = False in [x.is_face_up for x in self.game.players[0].cards]
+            user_won = 0 in obs[8:12]
             self.layout.replaceWidget(self.actions, GameOver(user_won))
 
-        elif self.game.whose_action == 0:
-            valid = self._game.env.get_valid_actions(text=True)
+        elif self.env.game.whose_action == 0:
+            valid = self.env.get_valid_actions(text=True)
             self.actions.enable(valid)
 
         for i in range(len(self.players)):
             p = self.players[i]
-            p_env = self.game.players[i]
+            p_env_cards = [(obs[ind+i*4], obs[ind+8+i*4]) for ind in range(4) if obs[ind+i*4] != 'none']
+            p_env_coins = obs[16+i]
+            p_env_la = obs[18+i]
 
             # Refresh coins
-            p.set_coins(p_env.coins)
+            p.set_coins(p_env_coins)
 
             # Refresh last move
-            if p_env.last_action is not None:
-                a = self._game.env.actions[p_env.last_action].replace('_', ' ').capitalize().strip()
+            if p_env_la != 'none':
+                a = p_env_la.replace('_', ' ').capitalize().strip()
                 if a[:4] in ['Pass', 'Bloc', 'Chal']:
                     a = a.split()[0]
                 p.set_move(a)
@@ -95,9 +98,9 @@ class Board(QWidget):
             # Replace all cards
             while len(p.cards):
                 p.remove_card(0)
-            for c in p_env.cards:
-                new_c = Card(name=c.get_name(), parent=p)
-                if c.is_face_up:
+            for c in p_env_cards:
+                new_c = Card(name=c[0], parent=p)
+                if c[1]:
                     new_c.set_eliminated()
                 elif i == 1:
                     # Hide player 2 cards unless eliminated
@@ -106,13 +109,13 @@ class Board(QWidget):
                 p.add_card(new_c)
 
             # If necessary, allow P1 cards to be selected
-            if self.game.whose_action == 0 and i == 0:
+            if self.env.game.whose_action == 0 and i == 0:
                 text = ''
                 if 'lose_card_1' in valid or 'lose_card_2' in valid:
                     # Player will select which card to lose
                     p.num_selectable = 1
 
-                    if self._game.env.actions[self.game.players[1].last_action] == 'assassinate':
+                    if obs[19] == 'assassinate':
                         # Opponent is assassinating
                         text = 'Choose a card to be eliminated and press Confirm\nOR\nBlock or Challenge the assassination'
                     else:
