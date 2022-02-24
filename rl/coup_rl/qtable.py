@@ -85,10 +85,14 @@ class QTable:
 
     def get_max_ind(self, ind_tpls):
         '''
-        Get the Q-Table index with the largest Q-value
+        Get the Q-Table index with the largest Q-value, and the Q-value itself
         Note: Returns the first max. Ignores other occurrences.
 
         ind_tpls: List of tuples, each for a single cell in the table
         '''
-        ind = np.argmax([self.get(x) for x in ind_tpls])
-        return ind_tpls[ind]
+        qvals = [self.get(x) for x in ind_tpls]
+        index, max_val = -1, -10
+        for i in range(len(qvals)):
+            if qvals[i] > max_val:
+                index, max_val = i, qvals[i]
+        return ind_tpls[index], max_val
