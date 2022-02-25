@@ -62,7 +62,7 @@ class Agent:
             # Q Learning algorithm
             q_new = q_old + self.learning_rate * (self.reward + self.discount_factor * q_max - q_old)
             self.qtable.set(self.prev_state_action, q_new)
-            logger.debug('Updated Q-value')
+            logger.debug(f'Updated Q-value for {self.prev_state_action} to {q_new}')
 
             # Store state and action that's about to be taken
             self.prev_state_action = state_action

@@ -659,6 +659,7 @@ class Game:
     def _challenge_fail_replace_card(self, card_val):
         # If the challenged player actually had the correct card,
         # shuffle it into the deck and give them a new card
+        logger.info(f'Showing and replacing card {Card.names[card_val]}')
         p = self.get_opp_player()
         for i in range(len(p.cards)):
             c = p.cards[i]

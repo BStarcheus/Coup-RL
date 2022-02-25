@@ -41,8 +41,7 @@ $ pip install -e ./rl
 ## Usage
 ### Run the Desktop App
 ```bash
-$ cd coup-rl/app
-$ python main.py
+$ python app/main.py
 ```
 
 For further usage documentation see the individual modules:
