@@ -1,4 +1,3 @@
-import random
 import logging
 import re
 import gym
@@ -41,7 +40,7 @@ class Human_v_Agent:
             logging.getLogger('gym_coup').setLevel(log_level)
 
         self.env.render()
-        
+
         if (learning_rate is not None and
             discount_factor is not None and
             epsilon is not None):
@@ -58,8 +57,6 @@ class Human_v_Agent:
 
         self.agent = Agent(2, self.env, self.qtable)
 
-        random.seed()
-
     def step(self, action):
         '''
         Take one action for the human player,
@@ -75,36 +72,33 @@ class Human_v_Agent:
             self.env.render()
 
         if done:
-            self.finish_game()
+            # Do a final update now that the game is over
+            self.agent.update_q_value(0)
+            # and save the agent if training
+            if self.is_training:
+                self.save_agent()
 
-    def finish_game(self):
-        if self.is_training:
-            # All saved agent files must end with _000000.npz
-            # with number of episodes it's trained on
-            fp_split = self.filepath.split('/')
-            file = fp_split[-1]
-            suf = re.search('_\d\d\d\d\d\d.npz', file)
-            if suf:
-                start = suf.start() + 1
-                end = suf.end() - 4
-                num_ep = int(file[start:end]) + 1
-                num_ep = str(num_ep)
-                num_ep = (6-len(num_ep)) * '0' + num_ep
-                file = file[:start]
-            else:
-                # When creating new, user likely wont enter number
-                # But .npz will be there
-                file = file[:-4] + '_'
-                num_ep = '000001'
+    def save_agent(self):
+        # All saved agent files must end with _000000.npz
+        # with number of episodes it's trained on
+        fp_split = self.filepath.split('/')
+        file = fp_split[-1]
+        suf = re.search('_\d\d\d\d\d\d.npz', file)
+        if suf:
+            start = suf.start() + 1
+            end = suf.end() - 4
+            num_ep = int(file[start:end]) + 1
+            num_ep = str(num_ep)
+            num_ep = (6-len(num_ep)) * '0' + num_ep
+            file = file[:start]
+        else:
+            # When creating new, user likely wont enter number
+            # But .npz will be there
+            file = file[:-4] + '_'
+            num_ep = '000001'
 
-            new_file = file + num_ep + '.npz'
-            fp_split[-1] = new_file
-            new_fp = '/'.join(fp_split)
+        new_file = file + num_ep + '.npz'
+        fp_split[-1] = new_file
+        new_fp = '/'.join(fp_split)
 
-            self.qtable.save(new_fp)
-
-    def agent_random_step(self):
-        # Temp random agent
-        agent_action = random.choice(self.env.get_valid_actions())
-        logger.debug(f'agent: {self.env.actions[agent_action]}')
-        return self.env.step(agent_action)
+        self.qtable.save(new_fp)

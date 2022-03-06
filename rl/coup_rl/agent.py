@@ -45,32 +45,21 @@ class Agent:
 
         state_action = tuple(state + [action])
 
-        # Update Q values when prev_state_action has cell in QTable
-        # (anything but exchange return).
-        # Also, we view the opponent as the environment.
-        if (self.prev_state_action is not None and
-            self.prev_state_action[-1] < 26 and
-            action < 26):
-            # Get Q value for previous state-action
-            q_old = self.qtable.get(self.prev_state_action)
+        # If not an exchange return
+        if action < 26:
+            if self.prev_state_action is None:
+                # On first turn
+                self.prev_state_action = state_action
+            # prev_state_action will always have action < 26
+            else:
+                if q_max is None:
+                    # Random choice was selected above
+                    # Get Q value for best action from new state
+                    _, q_max = self.get_best_action(state, valid_actions, obs)
 
-            if q_max is None:
-                # Random choice was selected above
-                # Get Q value for best action from new state
-                _, q_max = self.get_best_action(state, valid_actions, obs)
-
-            # Q Learning algorithm
-            q_new = q_old + self.learning_rate * (self.reward + self.discount_factor * q_max - q_old)
-            self.qtable.set(self.prev_state_action, q_new)
-            logger.debug(f'Updated Q-value for {self.prev_state_action} to {q_new}')
-
-            # Store state and action that's about to be taken
-            self.prev_state_action = state_action
-            self.reward = 0
-
-        elif self.prev_state_action is None:
-            # On first turn
-            self.prev_state_action = state_action
+                self.update_q_value(q_max)
+                # Store state and action that's about to be taken
+                self.prev_state_action = state_action
 
         # Take action
         logger.debug(f'P{self.id}: {self.env.actions[action]}')
@@ -78,6 +67,23 @@ class Agent:
         self.reward += reward
 
         return obs, reward, done, info
+
+    def update_q_value(self, q_max):
+        '''
+        Update the Q-value of the previous state-action
+        using q_max from the new (current) state
+
+        q_max: Double, max Q-value from new state
+        '''
+        # Get Q value for previous state-action
+        q_old = self.qtable.get(self.prev_state_action)
+
+        # Q Learning algorithm
+        q_new = q_old + self.learning_rate * (self.reward + self.discount_factor * q_max - q_old)
+        self.qtable.set(self.prev_state_action, q_new)
+        logger.debug(f'Updated Q-value for {self.prev_state_action} to {q_new}')
+
+        self.reward = 0
 
     def get_best_action(self, state, actions, obs):
         '''

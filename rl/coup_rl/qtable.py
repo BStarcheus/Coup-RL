@@ -6,7 +6,7 @@ logger = logging.getLogger('coup_rl')
 
 class QTable:
     '''
-    Stores the necessary information for the Q-Learning algorithm
+    Stores the necessary information for the Q-learning algorithm
     Q-Table with indicies for each state-action pair
     Alg Parameters:
         Learning rate
