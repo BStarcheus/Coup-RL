@@ -27,7 +27,7 @@ class SelfPlay:
         # and get the base name to save to later
         fp_split = filepath.split('/')
         file = fp_split[-1]
-        suf = re.search('_\d\d\d\d\d\d.npz', file)
+        suf = re.search('_\d\d\d\d\d\d\d\d\d\d.npz', file)
         if suf:
             start = suf.start() + 1
             end = suf.end() - 4
@@ -78,7 +78,7 @@ class SelfPlay:
             if ep % checkpoint == 0:
                 logger.info(f'Saving at checkpoint. Episode {ep} / {episodes}')
                 num_ep = str(self.start_ep + ep)
-                num_ep = (6-len(num_ep)) * '0' + num_ep
+                num_ep = (10-len(num_ep)) * '0' + num_ep
                 self.qtable.save(self.filepath_no_suf + num_ep + '.npz')
 
             ep += 1

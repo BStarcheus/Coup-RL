@@ -83,19 +83,19 @@ class Human_v_Agent:
         # with number of episodes it's trained on
         fp_split = self.filepath.split('/')
         file = fp_split[-1]
-        suf = re.search('_\d\d\d\d\d\d.npz', file)
+        suf = re.search('_\d\d\d\d\d\d\d\d\d\d.npz', file)
         if suf:
             start = suf.start() + 1
             end = suf.end() - 4
             num_ep = int(file[start:end]) + 1
             num_ep = str(num_ep)
-            num_ep = (6-len(num_ep)) * '0' + num_ep
+            num_ep = (10-len(num_ep)) * '0' + num_ep
             file = file[:start]
         else:
             # When creating new, user likely wont enter number
             # But .npz will be there
             file = file[:-4] + '_'
-            num_ep = '000001'
+            num_ep = '0000000001'
 
         new_file = file + num_ep + '.npz'
         fp_split[-1] = new_file
