@@ -803,6 +803,9 @@ class CoupEnv(gym.Env):
         # Num face up cards of each player after the action
         num_cards_2 = [len([1 for c in p.cards if c.is_face_up]) for p in self.game.players]
 
+        if 2 in num_cards_2 and not self.game.game_over:
+            raise RuntimeError('Game over was not set when it should be')
+
         reward = 0
         # Get number of cards lost this action by each player
         dif_curr = num_cards_2[whose_a] - num_cards_1[whose_a]
