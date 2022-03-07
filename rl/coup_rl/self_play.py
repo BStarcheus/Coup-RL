@@ -88,17 +88,20 @@ class SelfPlay:
         Run a single Coup game
         '''
         done = False
+        whose_action = 0
         while not done:
             # P1 turn
-            while not done and self.env.game.whose_action != 1:
+            while not done and whose_action != 1:
                 obs, reward, done, info = self.p1.step()
                 self.p2.reward -= reward # Make sure the other agent gets feedback for what happened
                 self.env.render()
+                whose_action = obs[-1]
             # P2 turn
-            while not done and self.env.game.whose_action != 0:
+            while not done and whose_action != 0:
                 obs2, reward2, done, info2 = self.p2.step()
                 self.p1.reward -= reward2 # Make sure the other agent gets feedback for what happened
                 self.env.render()
+                whose_action = obs2[-1]
 
         # Do a final update now that the game is over
         self.p1.update_q_value(0)

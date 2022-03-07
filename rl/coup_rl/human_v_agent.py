@@ -67,9 +67,12 @@ class Human_v_Agent:
         self.agent.reward -= reward # Make sure the agent gets feedback for what happened
         self.env.render()
 
-        while not done and self.env.game.whose_action != 0:
+        whose_action = obs[-1]
+
+        while not done and whose_action != 0:
             obs2, reward2, done, info2 = self.agent.step()
             self.env.render()
+            whose_action = obs2[-1]
 
         if done:
             # Do a final update now that the game is over
