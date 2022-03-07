@@ -51,7 +51,7 @@ For further usage documentation see the individual modules:
 
 ## FAQ
 ### Do I need to install everything?
-No. If you aren't going to use the desktop app, you don't need to install PyQt6 and its dependencies. You can ignore the command from above:
+No. If you aren't going to use the desktop app, you don't need to install PyQt6 and its dependencies. You can ignore the command:
 ```bash
 $ pip install -r app/requirements.txt
 ```

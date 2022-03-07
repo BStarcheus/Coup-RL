@@ -5,14 +5,20 @@ You can choose to train the agent through your games, or play with an agent trai
 
 ## Usage
 ```bash
-$ cd coup-rl/app
-$ python main.py
+$ python app/main.py
 ```
-First, make your selections on the main menu. 
-- File of a saved agent, or leave blank to play against a new agent
+First, make your selections on the main menu.
+- When creating a new agent:
+    - File location to save to
+    - Learning Rate
+    - Discount Factor
+    - Epsilon
+- When using an existing agent:
+    - Existing agent file location
 - Whether to train the agent (whether the value function will be saved with updated values after this game or not)
-- Which player has the first turn
-![Coup RL Desktop App Menu](./img/menu.png)
+- Which player has the first turn  
+![Coup RL Desktop App Menu](./img/menu1.png)
+![Coup RL Desktop App Menu](./img/menu2.png)
 
 After pressing start, the game will begin. You'll see your opponent on the top and your information on the bottom. For both players you can see the cards, the last move they took, and the number of coins they have. The opponent's cards stay hidden until they have been eliminated. 
 
