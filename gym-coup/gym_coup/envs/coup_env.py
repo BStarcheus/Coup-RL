@@ -393,7 +393,6 @@ class Game:
             curr_player = self.get_curr_action_player()
             curr_player.add_card(self.draw_card())
             curr_player.add_card(self.draw_card())
-            curr_player._sort_cards()
             # Don't increment turn or action
             # It is still curr_player's choice of which cards to return to the deck
 
