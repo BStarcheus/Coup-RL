@@ -52,7 +52,7 @@ class Human_v_Agent:
             try:
                 self.qtable = QTable()
                 self.qtable.load(self.filepath)
-            except:
+            except FileNotFoundError:
                 raise RuntimeError('Agent file does not exist, and not enough information was provided to create a new agent')
 
         self.agent = Agent(2, self.env, self.qtable)

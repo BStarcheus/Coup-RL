@@ -17,10 +17,13 @@ class SelfPlay:
                  log_level=None):
         '''
         filepath:        Path for file ending in .npz
-        learning_rate:   Used for creating new QTable. Float (0, 1]
-        discount_factor: Used for creating new QTable. Float [0, 1]
-        epsilon:         Used for creating new QTable. Float [0, 1]
+        learning_rate:   Float (0, 1]
+        discount_factor: Float [0, 1]
+        epsilon:         Float [0, 1]
         log_level:       coup_rl log level
+
+        Must supply lr, df, eps when creating new table.
+        Otherwise, supplying them replaces existing params.
         '''
         # Load from
         self.filepath = filepath
@@ -48,18 +51,26 @@ class SelfPlay:
         if log_level is not None:
             logger.setLevel(log_level)
 
-        if (learning_rate is not None and
-            discount_factor is not None and
-            epsilon is not None):
-            # Create new Q Table
-            shape = (15, 15, 4, 4, 13, 13, self.env.action_space.n - 7)
-            self.qtable = QTable(shape, learning_rate, discount_factor, epsilon)
-        else:
-            # Try to load existing Q Table
-            try:
-                self.qtable = QTable()
-                self.qtable.load(self.filepath)
-            except:
+        # Try to load existing Q Table
+        try:
+            self.qtable = QTable()
+            self.qtable.load(self.filepath)
+
+            # Update the params mid-training if supplied
+            if learning_rate is not None:
+                self.qtable.learning_rate = learning_rate
+            if discount_factor is not None:
+                self.qtable.discount_factor = discount_factor
+            if epsilon is not None:
+                self.qtable.epsilon = epsilon
+        except FileNotFoundError:
+            if (learning_rate is not None and
+                discount_factor is not None and
+                epsilon is not None):
+                # Create new Q Table
+                shape = (15, 15, 4, 4, 13, 13, self.env.action_space.n - 7)
+                self.qtable = QTable(shape, learning_rate, discount_factor, epsilon)
+            else:
                 raise RuntimeError('Agent file does not exist, and not enough information was provided to create a new agent')
 
         self.p1 = Agent(1, self.env, self.qtable)
@@ -75,7 +86,7 @@ class SelfPlay:
             self.env.reset()
             self.run_game()
 
-            if ep % checkpoint == 0:
+            if ep % checkpoint == 0 or ep == episodes:
                 logger.info(f'Saving at checkpoint. Episode {ep} / {episodes}')
                 num_ep = str(self.start_ep + ep)
                 num_ep = (10-len(num_ep)) * '0' + num_ep
