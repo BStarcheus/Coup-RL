@@ -1,6 +1,6 @@
 import random
 import logging
-from coup_rl.utils import *
+from coup_rl.utils import convert_obs_to_q_index
 
 logging.basicConfig()
 logger = logging.getLogger('coup_rl')

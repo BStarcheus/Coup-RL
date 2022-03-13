@@ -4,6 +4,7 @@ import gym
 import gym_coup
 from coup_rl.qtable import QTable
 from coup_rl.agent import Agent
+from coup_rl.utils import get_num_changed, has_converged
 
 logging.basicConfig()
 logger = logging.getLogger('coup_rl')
@@ -23,10 +24,11 @@ class SelfPlay:
         log_level:       coup_rl log level
 
         Must supply lr, df, eps when creating new table.
-        Otherwise, supplying them replaces existing params.
+        Otherwise, supplying them replaces params in existing file.
         '''
         # Load from
         self.filepath = filepath
+        self.last_file = None # Updated below if existing file
         # and get the base name to save to later
         fp_split = filepath.split('/')
         file = fp_split[-1]
@@ -55,6 +57,7 @@ class SelfPlay:
         try:
             self.qtable = QTable()
             self.qtable.load(self.filepath)
+            self.last_file = self.filepath
 
             # Update the params mid-training if supplied
             if learning_rate is not None:
@@ -76,21 +79,36 @@ class SelfPlay:
         self.p1 = Agent(1, self.env, self.qtable)
         self.p2 = Agent(2, self.env, self.qtable)
 
-    def train(self, episodes, checkpoint):
+    def train(self, episodes, checkpoint, conv_eps):
         '''
         episodes:   Number of episodes to run
         checkpoint: Number of episodes to save a new agent file after
+        conv_eps:   Convergence epsilon. Max average difference for convergence
         '''
         ep = 1
-        while ep <= episodes:
+        converged = False
+        while ep <= episodes and not converged:
             self.env.reset()
             self.run_game()
 
             if ep % checkpoint == 0 or ep == episodes:
                 logger.info(f'Saving at checkpoint. Episode {ep} / {episodes}')
+
+                # Comparison metrics
+                if self.last_file is not None:
+                    # Use prev table
+                    qold = QTable()
+                    qold.load(self.last_file)
+                    num_changed = get_num_changed(qold.table, self.qtable.table)
+                    logger.info(f'\tNum Q-values modified: {num_changed}')
+                    converged = has_converged(qold.table, self.qtable.table, conv_eps * num_changed)
+                    if converged:
+                        logger.info('Converged')
+
                 num_ep = str(self.start_ep + ep)
                 num_ep = (10-len(num_ep)) * '0' + num_ep
-                self.qtable.save(self.filepath_no_suf + num_ep + '.npz')
+                self.last_file = self.filepath_no_suf + num_ep + '.npz'
+                self.qtable.save(self.last_file)
 
             ep += 1
 

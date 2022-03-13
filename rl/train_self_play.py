@@ -4,10 +4,12 @@ import time
 from coup_rl import SelfPlay
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Coup RL Self-play Training')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+        description='Coup RL Self-play Training\nCreate new agent: New filename, and add LR, DR, Epsilon\nUse existing: Existing filename\nModify existing: Existing filename, and add any param you want to change mid-training (LR, DF, Epsilon)')
     parser.add_argument('filepath', help='File path and name for agent to train')
     parser.add_argument('episodes', type=int, help='Number of episodes to train for')
     parser.add_argument('checkpoint', type=int, help='Number of episodes between saving the agent to a new file')
+    parser.add_argument('--conv_eps', type=float, default=0.01, help='Convergence epsilon: Max average difference for convergence')
     parser.add_argument('--learning_rate', type=float, help='Learning Rate (0, 1]')
     parser.add_argument('--discount_factor', type=float, help='Discount Factor [0, 1]')
     parser.add_argument('--epsilon', type=float, help='Ratio of exploration [0, 1]')
@@ -26,7 +28,7 @@ if __name__ == '__main__':
     if args.timer:
         start = time.time()
 
-    sp.train(args.episodes, args.checkpoint)
+    sp.train(args.episodes, args.checkpoint, args.conv_eps)
 
     if args.timer:
         delta = time.time() - start

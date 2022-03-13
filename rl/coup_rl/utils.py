@@ -1,3 +1,5 @@
+import numpy as np
+
 def convert_obs_to_q_index(obs):
     '''
     Convert a CoupEnv observation into the
@@ -25,3 +27,17 @@ def convert_obs_to_q_index(obs):
     p2_face_up = obs[12] * 2 + obs[13]
 
     return [p1_cards, p2_cards, p1_face_up, p2_face_up, obs[16], obs[17]]
+
+def get_num_changed(arr1, arr2):
+    '''
+    Get the number of cells with different values between numpy arrays
+    '''
+    return np.sum(arr1 != arr2)
+
+def has_converged(arr1, arr2, epsilon):
+    '''
+    Test if the value function has converged
+    | Sum of all differences of cells between iterations | < epsilon
+    '''
+    s = np.sum(np.absolute(arr1 - arr2))
+    return s < epsilon
