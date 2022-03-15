@@ -9,7 +9,7 @@ if __name__ == '__main__':
     parser.add_argument('filepath', help='File path and name for agent to train')
     parser.add_argument('episodes', type=int, help='Number of episodes to train for')
     parser.add_argument('checkpoint', type=int, help='Number of episodes between saving the agent to a new file')
-    parser.add_argument('--conv_eps', type=float, default=0.01, help='Convergence epsilon: Max average difference for convergence')
+    parser.add_argument('--conv_eps', type=float, default=0.01, help='Convergence epsilon: Max difference for convergence')
     parser.add_argument('--learning_rate', type=float, help='Learning Rate (0, 1]')
     parser.add_argument('--discount_factor', type=float, help='Discount Factor [0, 1]')
     parser.add_argument('--epsilon', type=float, help='Ratio of exploration [0, 1]')

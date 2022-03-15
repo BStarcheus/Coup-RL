@@ -37,7 +37,7 @@ def get_num_changed(arr1, arr2):
 def has_converged(arr1, arr2, epsilon):
     '''
     Test if the value function has converged
-    | Sum of all differences of cells between iterations | < epsilon
+    | Max difference of cells between iterations | < epsilon
     '''
-    s = np.sum(np.absolute(arr1 - arr2))
-    return s < epsilon
+    m = np.amax(np.absolute(arr1 - arr2))
+    return m < epsilon

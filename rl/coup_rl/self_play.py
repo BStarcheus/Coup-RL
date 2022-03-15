@@ -83,7 +83,7 @@ class SelfPlay:
         '''
         episodes:   Number of episodes to run
         checkpoint: Number of episodes to save a new agent file after
-        conv_eps:   Convergence epsilon. Max average difference for convergence
+        conv_eps:   Convergence epsilon. Max difference for convergence
         '''
         ep = 1
         converged = False
@@ -101,7 +101,7 @@ class SelfPlay:
                     qold.load(self.last_file)
                     num_changed = get_num_changed(qold.table, self.qtable.table)
                     logger.info(f'\tNum Q-values modified: {num_changed}')
-                    converged = has_converged(qold.table, self.qtable.table, conv_eps * num_changed)
+                    converged = has_converged(qold.table, self.qtable.table, conv_eps)
                     if converged:
                         logger.info('Converged')
 
