@@ -14,6 +14,8 @@ Coup RL consists of several submodules:
 - [Desktop app](./app): Humans can play against an RL agent with this simple app.
 - [Reinforcement learning agent & algorithms](./rl): Contains the structures and algorithms required to train an agent, as well as save and load agents.
 
+See the results of my training and testing in my [Senior Design repo](https://github.com/BStarcheus/Senior-Design/blob/main/results/results.md).
+
 ## Requirements
 The project can run on any OS with [Python 3](https://www.python.org/) installed that also supports [OpenAI Gym](https://gym.openai.com/) and [PyQt6](https://doc.qt.io/qtforpython/).
 Developed and tested on macOS with Python 3.9.
